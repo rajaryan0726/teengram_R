@@ -94,7 +94,7 @@ const page = () => {
 
           {/* Name */}
           <div className="mb-3">
-            <label className="block text-sm font-medium">Your Parent given Name</label>
+            <label className="block text-sm font-medium">Name as per the Institute idcard</label>
             <input
               className="w-full border px-3 py-2 rounded-lg mt-1"
                value={form.name?form.name:""}
@@ -112,11 +112,37 @@ const page = () => {
             onChange={handleChange}
               type="text"
               name="bio" id="bio"
-              rows="3"
-              
-            />          
+              rows="3"/>          
 </div>
-          
+<div className="mb-3">
+            <label className="block text-sm font-medium">Your Age</label>
+            <input className="w-full border px-3 py-2 rounded-lg mt-1"
+            value={form.age?form.age:""}
+            onChange={handleChange}
+              type="text"
+              name="age" id="age"
+              rows="3"/>          
+</div>
+      <div className="mb-3">
+            <label className="block text-sm font-medium">Institue Name</label>
+            <input className="w-full border px-3 py-2 rounded-lg mt-1"
+            value={form.institute_name?form.institute_name:""}
+            onChange={handleChange}
+              type="text"
+              name="institute_name" id="institute_name"
+              rows="3"/>          
+</div>
+
+<div className="mb-3">
+            <label className="block text-sm font-medium">Univeristy Name</label>
+            <input className="w-full border px-3 py-2 rounded-lg mt-1"
+            value={form.university?form.university:""}
+            onChange={handleChange}
+              type="text"
+              name="university" id="university"
+              rows="3"/>          
+</div>
+
         </div>{/* Buttons */}
           <div className="flex justify-end gap-3 mt-4">
             <button

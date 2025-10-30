@@ -20,7 +20,7 @@ const Sidebar = () => {
     { Icon: Compass, label: "Explore", path: "/explore" },
     { Icon: Film, label: "Reels", path: "/reels" },
     { Icon: MessageCircle, label: "Messages", path: "/messages" },
-    { Icon: Heart, label: "Notifications", path: "/notifications" },
+    { Icon: Heart, label: "Notifications", path: "/Notification" },
     { Icon: PlusSquare, label: "Create", path: "/create" },
     { Icon: User, label: "Profile", path: "/User" },
   ];

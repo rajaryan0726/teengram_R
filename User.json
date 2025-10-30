@@ -1,0 +1,202 @@
+[
+  {
+    "email": "aarav.patel@gmail.com",
+    "name": "Aarav Patel",
+    "username": "aarav_07",
+    "age": 18,
+    "profilepic": "https://randomuser.me/api/portraits/men/32.jpg",
+    "bio": "Tech geek & chai lover ☕ | Exploring college life!",
+    "institute_name": "Universal College of Engineering",
+    "university": "Mumbai University"
+  },
+  {
+    "email": "isha.sharma@gmail.com",
+    "name": "Isha Sharma",
+    "username": "isha_smiles",
+    "age": 19,
+    "profilepic": "https://randomuser.me/api/portraits/women/44.jpg",
+    "bio": "Dream big, study hard 💫 | Love music & design",
+    "institute_name": "Universal College of Engineering",
+    "university": "Mumbai University"
+  },
+  {
+    "email": "krishna.vyas@gmail.com",
+    "name": "Krishna Vyas",
+    "username": "krish_v",
+    "age": 20,
+    "profilepic": "https://randomuser.me/api/portraits/men/28.jpg",
+    "bio": "Coding my way through college life 💻",
+    "institute_name": "Universal College of Engineering",
+    "university": "Mumbai University"
+  },
+  {
+    "email": "tanvi.mehta@gmail.com",
+    "name": "Tanvi Mehta",
+    "username": "tanvi.m",
+    "age": 18,
+    "profilepic": "https://randomuser.me/api/portraits/women/37.jpg",
+    "bio": "Dance. Code. Repeat 💃",
+    "institute_name": "Universal College of Engineering",
+    "university": "Mumbai University"
+  },
+  {
+    "email": "rohan.desai@gmail.com",
+    "name": "Rohan Desai",
+    "username": "rohan_d",
+    "age": 19,
+    "profilepic": "https://randomuser.me/api/portraits/men/48.jpg",
+    "bio": "Guitar + football + late-night coding ⚡",
+    "institute_name": "Universal College of Engineering",
+    "university": "Mumbai University"
+  },
+  {
+    "email": "ananya.nair@gmail.com",
+    "name": "Ananya Nair",
+    "username": "ananya_nair",
+    "age": 18,
+    "profilepic": "https://randomuser.me/api/portraits/women/21.jpg",
+    "bio": "Loves art, books & beach vibes 🌊",
+    "institute_name": "Universal College of Engineering",
+    "university": "Mumbai University"
+  },
+  {
+    "email": "advait.kapoor@gmail.com",
+    "name": "Advait Kapoor",
+    "username": "advaitk",
+    "age": 19,
+    "profilepic": "https://randomuser.me/api/portraits/men/35.jpg",
+    "bio": "Always learning. Always curious 🤓",
+    "institute_name": "Universal College of Engineering",
+    "university": "Mumbai University"
+  },
+  {
+    "email": "riya.jain@gmail.com",
+    "name": "Riya Jain",
+    "username": "riya_j",
+    "age": 17,
+    "profilepic": "https://randomuser.me/api/portraits/women/52.jpg",
+    "bio": "Future entrepreneur 💼 | Passion for innovation",
+    "institute_name": "Universal College of Engineering",
+    "university": "Mumbai University"
+  },
+  {
+    "email": "aryan.singh@gmail.com",
+    "name": "Aryan Singh",
+    "username": "aryan_s",
+    "age": 20,
+    "profilepic": "https://randomuser.me/api/portraits/men/11.jpg",
+    "bio": "Fitness freak 💪 | Part-time gamer 🎮",
+    "institute_name": "Universal College of Engineering",
+    "university": "Mumbai University"
+  },
+  {
+    "email": "meera.reddy@gmail.com",
+    "name": "Meera Reddy",
+    "username": "meera_r",
+    "age": 18,
+    "profilepic": "https://randomuser.me/api/portraits/women/60.jpg",
+    "bio": "Curious mind, creative soul ✨",
+    "institute_name": "Universal College of Engineering",
+    "university": "Mumbai University"
+  },
+  {
+    "email": "sahil.kumar@gmail.com",
+    "name": "Sahil Kumar",
+    "username": "sahil_99",
+    "age": 19,
+    "profilepic": "https://randomuser.me/api/portraits/men/39.jpg",
+    "bio": "Trying to balance books & life 🎧",
+    "institute_name": "Universal College of Engineering",
+    "university": "Mumbai University"
+  },
+  {
+    "email": "priya.verma@gmail.com",
+    "name": "Priya Verma",
+    "username": "priya_v",
+    "age": 20,
+    "profilepic": "https://randomuser.me/api/portraits/women/46.jpg",
+    "bio": "Coding & coffee ☕ | Designing dreams",
+    "institute_name": "Universal College of Engineering",
+    "university": "Mumbai University"
+  },
+  {
+    "email": "devansh.trivedi@gmail.com",
+    "name": "Devansh Trivedi",
+    "username": "dev_trivedi",
+    "age": 18,
+    "profilepic": "https://randomuser.me/api/portraits/men/15.jpg",
+    "bio": "Movie buff 🎬 | Engineering my future",
+    "institute_name": "Universal College of Engineering",
+    "university": "Mumbai University"
+  },
+  {
+    "email": "nisha.bhatt@gmail.com",
+    "name": "Nisha Bhatt",
+    "username": "nisha_b",
+    "age": 17,
+    "profilepic": "https://randomuser.me/api/portraits/women/12.jpg",
+    "bio": "Sketching my way through college 🎨",
+    "institute_name": "Universal College of Engineering",
+    "university": "Mumbai University"
+  },
+  {
+    "email": "yash.jadhav@gmail.com",
+    "name": "Yash Jadhav",
+    "username": "yash_j",
+    "age": 18,
+    "profilepic": "https://randomuser.me/api/portraits/men/20.jpg",
+    "bio": "Exploring tech, travel & thrill 🏍️",
+    "institute_name": "Universal College of Engineering",
+    "university": "Mumbai University"
+  },
+  {
+    "email": "neha.pillai@gmail.com",
+    "name": "Neha Pillai",
+    "username": "neha_p",
+    "age": 19,
+    "profilepic": "https://randomuser.me/api/portraits/women/23.jpg",
+    "bio": "Loves books, dogs & deep talks 📚🐶",
+    "institute_name": "Universal College of Engineering",
+    "university": "Mumbai University"
+  },
+  {
+    "email": "arjun.naik@gmail.com",
+    "name": "Arjun Naik",
+    "username": "arjun_n",
+    "age": 18,
+    "profilepic": "https://randomuser.me/api/portraits/men/42.jpg",
+    "bio": "Future innovator ⚙️ | Coffee & code addict",
+    "institute_name": "Universal College of Engineering",
+    "university": "Mumbai University"
+  },
+  {
+    "email": "tanya.agarwal@gmail.com",
+    "name": "Tanya Agarwal",
+    "username": "tanya_agarwal",
+    "age": 20,
+    "profilepic": "https://randomuser.me/api/portraits/women/19.jpg",
+    "bio": "Making memories, one semester at a time 🎓",
+    "institute_name": "Universal College of Engineering",
+    "university": "Mumbai University"
+  },
+  {
+    "email": "raj.malhotra@gmail.com",
+    "name": "Raj Malhotra",
+    "username": "raj_m",
+    "age": 19,
+    "profilepic": "https://randomuser.me/api/portraits/men/53.jpg",
+    "bio": "Engineering + music = balance 🎶",
+    "institute_name": "Universal College of Engineering",
+    "university": "Mumbai University"
+  },
+  {
+    "email": "diya.singhania@gmail.com",
+    "name": "Diya Singhania",
+    "username": "diya_s",
+    "age": 18,
+    "profilepic": "https://randomuser.me/api/portraits/women/55.jpg",
+    "bio": "Believe. Create. Inspire 🌈",
+    "institute_name": "Universal College of Engineering",
+    "university": "Mumbai University"
+  }
+]

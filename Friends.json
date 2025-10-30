@@ -1,0 +1,163 @@
+[
+  {
+    "sender_email": "aarav.patel@gmail.com",
+    "reciever_email": "kv29351@gmail.com",
+    "request_accepted": false,
+    "sender_profilepic": "https://randomuser.me/api/portraits/men/32.jpg",
+    "createdAt": "2025-10-22T12:15:30Z",
+    "updatedAt": "2025-10-22T12:15:30Z"
+  },
+  {
+    "sender_email": "isha.sharma@gmail.com",
+    "reciever_email": "kv29351@gmail.com",
+    "request_accepted": false,
+    "sender_profilepic": "https://randomuser.me/api/portraits/women/44.jpg",
+    "createdAt": "2025-10-22T13:01:12Z",
+    "updatedAt": "2025-10-22T13:01:12Z"
+  },
+  {
+    "sender_email": "krishna.vyas@gmail.com",
+    "reciever_email": "kv29351@gmail.com",
+    "request_accepted": false,
+    "sender_profilepic": "https://randomuser.me/api/portraits/men/28.jpg",
+    "createdAt": "2025-10-22T14:45:55Z",
+    "updatedAt": "2025-10-22T14:45:55Z"
+  },
+  {
+    "sender_email": "tanvi.mehta@gmail.com",
+    "reciever_email": "kv29351@gmail.com",
+    "request_accepted": false,
+    "sender_profilepic": "https://randomuser.me/api/portraits/women/37.jpg",
+    "createdAt": "2025-10-22T15:21:10Z",
+    "updatedAt": "2025-10-22T15:21:10Z"
+  },
+  {
+    "sender_email": "rohan.desai@gmail.com",
+    "reciever_email": "kv29351@gmail.com",
+    "request_accepted": false,
+    "sender_profilepic": "https://randomuser.me/api/portraits/men/48.jpg",
+    "createdAt": "2025-10-22T16:09:45Z",
+    "updatedAt": "2025-10-22T16:09:45Z"
+  },
+  {
+    "sender_email": "ananya.nair@gmail.com",
+    "reciever_email": "kv29351@gmail.com",
+    "request_accepted": false,
+    "sender_profilepic": "https://randomuser.me/api/portraits/women/21.jpg",
+    "createdAt": "2025-10-22T16:32:00Z",
+    "updatedAt": "2025-10-22T16:32:00Z"
+  },
+  {
+    "sender_email": "advait.kapoor@gmail.com",
+    "reciever_email": "kv29351@gmail.com",
+    "request_accepted": false,
+    "sender_profilepic": "https://randomuser.me/api/portraits/men/35.jpg",
+    "createdAt": "2025-10-22T17:00:05Z",
+    "updatedAt": "2025-10-22T17:00:05Z"
+  },
+  {
+    "sender_email": "riya.jain@gmail.com",
+    "reciever_email": "kv29351@gmail.com",
+    "request_accepted": false,
+    "sender_profilepic": "https://randomuser.me/api/portraits/women/52.jpg",
+    "createdAt": "2025-10-22T18:05:21Z",
+    "updatedAt": "2025-10-22T18:05:21Z"
+  },
+  {
+    "sender_email": "aryan.singh@gmail.com",
+    "reciever_email": "kv29351@gmail.com",
+    "request_accepted": false,
+    "sender_profilepic": "https://randomuser.me/api/portraits/men/11.jpg",
+    "createdAt": "2025-10-22T19:12:11Z",
+    "updatedAt": "2025-10-22T19:12:11Z"
+  },
+  {
+    "sender_email": "meera.reddy@gmail.com",
+    "reciever_email": "kv29351@gmail.com",
+    "request_accepted": false,
+    "sender_profilepic": "https://randomuser.me/api/portraits/women/60.jpg",
+    "createdAt": "2025-10-22T19:30:42Z",
+    "updatedAt": "2025-10-22T19:30:42Z"
+  },
+  {
+    "sender_email": "sahil.kumar@gmail.com",
+    "reciever_email": "kv29351@gmail.com",
+    "request_accepted": false,
+    "sender_profilepic": "https://randomuser.me/api/portraits/men/39.jpg",
+    "createdAt": "2025-10-22T20:00:03Z",
+    "updatedAt": "2025-10-22T20:00:03Z"
+  },
+  {
+    "sender_email": "priya.verma@gmail.com",
+    "reciever_email": "kv29351@gmail.com",
+    "request_accepted": false,
+    "sender_profilepic": "https://randomuser.me/api/portraits/women/46.jpg",
+    "createdAt": "2025-10-22T20:45:20Z",
+    "updatedAt": "2025-10-22T20:45:20Z"
+  },
+  {
+    "sender_email": "devansh.trivedi@gmail.com",
+    "reciever_email": "kv29351@gmail.com",
+    "request_accepted": false,
+    "sender_profilepic": "https://randomuser.me/api/portraits/men/15.jpg",
+    "createdAt": "2025-10-22T21:30:50Z",
+    "updatedAt": "2025-10-22T21:30:50Z"
+  },
+  {
+    "sender_email": "nisha.bhatt@gmail.com",
+    "reciever_email": "kv29351@gmail.com",
+    "request_accepted": false,
+    "sender_profilepic": "https://randomuser.me/api/portraits/women/12.jpg",
+    "createdAt": "2025-10-22T22:05:19Z",
+    "updatedAt": "2025-10-22T22:05:19Z"
+  },
+  {
+    "sender_email": "yash.jadhav@gmail.com",
+    "reciever_email": "kv29351@gmail.com",
+    "request_accepted": false,
+    "sender_profilepic": "https://randomuser.me/api/portraits/men/20.jpg",
+    "createdAt": "2025-10-22T22:33:40Z",
+    "updatedAt": "2025-10-22T22:33:40Z"
+  },
+  {
+    "sender_email": "neha.pillai@gmail.com",
+    "reciever_email": "kv29351@gmail.com",
+    "request_accepted": false,
+    "sender_profilepic": "https://randomuser.me/api/portraits/women/23.jpg",
+    "createdAt": "2025-10-22T23:10:32Z",
+    "updatedAt": "2025-10-22T23:10:32Z"
+  },
+  {
+    "sender_email": "arjun.naik@gmail.com",
+    "reciever_email": "kv29351@gmail.com",
+    "request_accepted": false,
+    "sender_profilepic": "https://randomuser.me/api/portraits/men/42.jpg",
+    "createdAt": "2025-10-22T23:33:55Z",
+    "updatedAt": "2025-10-22T23:33:55Z"
+  },
+  {
+    "sender_email": "tanya.agarwal@gmail.com",
+    "reciever_email": "kv29351@gmail.com",
+    "request_accepted": false,
+    "sender_profilepic": "https://randomuser.me/api/portraits/women/19.jpg",
+    "createdAt": "2025-10-23T00:01:14Z",
+    "updatedAt": "2025-10-23T00:01:14Z"
+  },
+  {
+    "sender_email": "raj.malhotra@gmail.com",
+    "reciever_email": "kv29351@gmail.com",
+    "request_accepted": false,
+    "sender_profilepic": "https://randomuser.me/api/portraits/men/53.jpg",
+    "createdAt": "2025-10-23T00:40:20Z",
+    "updatedAt": "2025-10-23T00:40:20Z"
+  },
+  {
+    "sender_email": "diya.singhania@gmail.com",
+    "reciever_email": "kv29351@gmail.com",
+    "request_accepted": false,
+    "sender_profilepic": "https://randomuser.me/api/portraits/women/55.jpg",
+    "createdAt": "2025-10-23T01:10:44Z",
+    "updatedAt": "2025-10-23T01:10:44Z"
+  }
+]
+

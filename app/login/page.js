@@ -27,12 +27,12 @@ const page = () => {
   <form action="#" method="POST">
     <div className="mb-4">
       <label  className="block text-gray-600">Username</label>
-      <input type="text" id="username" name="username" className="text-white w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500" autocomplete="off"/>
+      <input type="text" id="username" name="username" className="text-white w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500" />
     </div>
     {/* <!-- Password Input --> */}
     <div className="mb-4">
       <label  className=" block text-gray-600">Password</label>
-      <input type="password" id="password" name="password" className="text-white w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500" autocomplete="off"/>
+      <input type="password" id="password" name="password" className="text-white w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"/>
     </div>
     {/* <!-- Remember Me Checkbox --> */}
     <div className="mb-4 flex items-center">

@@ -39,3 +39,9 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 # teengram
 last year project
 >>>>>>> 88c86c41658c08c9a687426e84d64bf8fe95fed4
+
+
+did changes with the json 
+
+  <!-- "start": "NODE_ENV=production node server.cjs",
+   "dev": "node server.cjs", -->
