@@ -10,6 +10,7 @@ import {
   PlusSquare,
   User,
   Menu,
+  Trophy,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -22,6 +23,7 @@ const Sidebar = () => {
     { Icon: MessageCircle, label: "Messages", path: "/messages" },
     { Icon: Heart, label: "Notifications", path: "/Notification" },
     { Icon: PlusSquare, label: "Create", path: "/create" },
+    { Icon: Trophy, label: "TeenArena", path: "/teenarena" },
     { Icon: User, label: "Profile", path: "/User" },
   ];
 
