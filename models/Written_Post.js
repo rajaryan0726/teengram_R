@@ -7,6 +7,8 @@ const Written_PostSchema=new Schema({
     content:{type:String,required:true},
     institute_name:{type:String},
     university_name:{type:String},
+    user_name:{type:String},
+    profilepic:{type:String},
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
     

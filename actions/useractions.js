@@ -147,10 +147,10 @@ export const find_following=async (useremail) => {
 // user_id:{type:String,required:true},
 //     caption:{type:String},
 //     institute_name:{type:String},
-//     university_name:{type:String},
+//     university_name:{type:String},  institute_name, form.university_name
 
 //Upload wriiten_post
-export const upload_written_post=async (data,user_id,institute_name,university_name) => {
+export const upload_written_post=async (data,user_id,institute_name,university,profilepic,user_name) => {
     await connectDb();
     let ndata=Object.fromEntries(data)
     console.log("uploading thought for user_id",user_id);
@@ -160,12 +160,34 @@ export const upload_written_post=async (data,user_id,institute_name,university_n
         caption:ndata.caption,
         content:ndata.content,
         institute_name:institute_name,
-        university_name:university_name,
+        university_name:university,
+        profilepic:profilepic,
+        user_name:user_name,
     })
     if(newpost){
         return true
     }
     return false
+}
+
+
+// await connectDb();
+//     console.log("fetching all the users");
+//     //the below query will find all the user except the one whose email is mentioned in $ne
+//     let u=await User.find({email:{$ne:email}});
+//     return u;
+//  let u=await Friends.find({reciever_email:useremail});
+ 
+//     return u;
+//fetch the writtenpost for the user
+export const fetchpost=async (user_id) => {
+    await connectDb();
+    console.log("fetching the post for the user",user_id);
+    let p=await Written_Post.find({user_id:user_id});
+    console.log(p);
+    
+    return p;
+    
 }
 
 //verification

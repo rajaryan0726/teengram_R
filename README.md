@@ -45,3 +45,9 @@ did changes with the json
 
   <!-- "start": "NODE_ENV=production node server.cjs",
    "dev": "node server.cjs", -->
+   
+   <div className='flex flex-row gap-20 w-full bg-amber-300'>
+              <div className='w-1/2'>Your post will come here</div>
+              {seefollower ? <div className='w-1/2'>Your foollower heheheheh</div> : <div className='w-1/2'>Your following will be here and when click on followe you will see follower</div>}
+
+            </div>

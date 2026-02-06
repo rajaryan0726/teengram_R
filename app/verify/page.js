@@ -1,30 +1,31 @@
 "use client";
-import { useState,useEffect } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Upload, CheckCircle, Loader2 } from "lucide-react";
+import { Upload, CheckCircle, XCircle, Loader2, AlertTriangle } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import React from "react";
-const page = () => {
 
-    const searchParams=useSearchParams();
-    useEffect(() => {
-      const name=searchParams.get("name");
-      const institute_name=searchParams.get("institute_name")
-      console.log(name,institute_name);
-      setusername(name)
-      setinstitute_names(institute_name)
-      console.log(username,institute_names);
-    }, [])
-    
-    const [username, setusername] = useState()
-    const [institute_names, setinstitute_names] = useState()
-const [file, setFile] = useState(null);
+const Page = () => {
+  const searchParams = useSearchParams();
+  const [username, setUsername] = useState("");
+  const [instituteNames, setInstituteNames] = useState("");
+  const [file, setFile] = useState(null);
   const [response, setResponse] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [verification, setVerification] = useState(null);
+
+  useEffect(() => {
+    const name = searchParams.get("name");
+    const institute_name = searchParams.get("institute_name");
+    setUsername(name || "");
+    setInstituteNames(institute_name || "");
+  }, [searchParams]);
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files.length > 0) {
       setFile(e.target.files[0]);
+      setResponse(null);
+      setVerification(null);
     }
   };
 
@@ -43,25 +44,38 @@ const [file, setFile] = useState(null);
 
       const data = await res.json();
       setResponse(data);
+
+      // --- Verification Logic ---
+      const extracted = data.extracted_data;
+      if (extracted) {
+        const age = extracted.age;
+        let status = "";
+        let reason = "";
+
+        if (age !== "Not detected" && age <= 18) {
+          status = "verified";
+          reason = "User is under 18 years old.";
+        } else if (age !== "Not detected" && age > 18) {
+          status = "failed";
+          reason = "User age exceeds verification threshold.";
+        } else {
+          status = "pending";
+          reason = "Age could not be detected. Manual verification required.";
+        }
+
+        setVerification({ status, reason });
+        
+      }
     } catch (err) {
       console.error(err);
       alert("Error connecting to OCR API");
     } finally {
       setLoading(false);
     }
-     const name=searchParams.get("name");
-      const institute_name=searchParams.get("institute_name")
-    if(Response){
-        if(institute_name==response.extracted_data.name){
-            console.log("hola");
-            
-        }
-    }
   };
 
-
   return (
-   <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-blue-50 to-white p-6">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-blue-50 to-white p-6">
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
@@ -129,26 +143,49 @@ const [file, setFile] = useState(null);
             className="mt-6 bg-blue-50 rounded-xl p-5 text-left"
           >
             <div className="flex items-center mb-3">
-              <CheckCircle className="text-green-500 w-5 h-5 mr-2" />
               <h2 className="text-lg font-semibold text-gray-800">
-                Verification Result
+                Extracted Details
               </h2>
             </div>
             <p className="text-gray-700">
               <strong>Name:</strong> {response.extracted_data?.name || "—"}
             </p>
             <p className="text-gray-700">
-              <strong>Institute:</strong>{" "}
-              {response.extracted_data?.institute || "—"}
+              <strong>Institute:</strong> {response.extracted_data?.institute || "—"}
             </p>
-            <p className="text-xs text-gray-500 mt-3">
+            <p className="text-gray-700">
+              <strong>DOB:</strong> {response.extracted_data?.dob || "—"}
+            </p>
+            <p className="text-gray-700">
+              <strong>Age:</strong> {response.extracted_data?.age || "—"}
+            </p>
+            <p className="text-xs text-gray-500 mt-3 break-words">
               <strong>Raw Text:</strong> {response.raw_text}
             </p>
           </motion.div>
         )}
+
+        {verification && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className={`mt-5 p-4 rounded-xl text-sm font-semibold flex items-center justify-center ${
+              verification.status === "verified"
+                ? "bg-green-100 text-green-700"
+                : verification.status === "failed"
+                ? "bg-red-100 text-red-700"
+                : "bg-yellow-100 text-yellow-700"
+            }`}
+          >
+            {verification.status === "verified" && <CheckCircle className="w-5 h-5 mr-2" />}
+            {verification.status === "failed" && <XCircle className="w-5 h-5 mr-2" />}
+            {verification.status === "pending" && <AlertTriangle className="w-5 h-5 mr-2" />}
+            {verification.reason}
+          </motion.div>
+        )}
       </motion.div>
-    
     </div>
   );
-}
-export default page
+};
+
+export default Page;
