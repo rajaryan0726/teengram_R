@@ -79,7 +79,7 @@
 //             return { 
 //                 id: friendId, 
 //                 name: friendData?.name || friendData?.username || 'New Chat', 
-//                 profilePic: friendData?.profilePic || '/default-avatar.png' 
+//                 profilepic: friendData?.profilepic || '/default-avatar.png' 
 //             };
 //         }
 //         return null; // No chat selected
@@ -117,6 +117,7 @@ import Sidebar from '../Components/Sidebar';
 import ChatList from '../Components/ChatList';
 import ChatView from '../Components/ChatView';
 import { socket } from "@/lib/socket";
+import { findOrCreateConversation } from '@/actions/useractions';
 
 // The wrapper accepts the securely fetched data as props.
 export default function ClientChatWrapper({ initialConversations, currentUserId, initialActiveChatId }) {
@@ -127,6 +128,39 @@ export default function ClientChatWrapper({ initialConversations, currentUserId,
 
     // Feature: Online Status
     const [onlineUsers, setOnlineUsers] = useState(new Set());
+
+    // START NEW CHAT HANDLER
+    const handleStartNewChat = async (selectedUser) => {
+        try {
+            // 1. Get/Create Conversation ID
+            const conversationId = await findOrCreateConversation(currentUserId, selectedUser._id);
+
+            // 2. Check if it already exists in our list
+            const existing = conversations.find(c => c._id === conversationId);
+
+            if (existing) {
+                setActiveChatId(conversationId);
+            } else {
+                // 3. Optimistically add to list
+                const newConv = {
+                    _id: conversationId,
+                    isGroup: false,
+                    participants: [
+                        { _id: currentUserId }, // Me (simplified)
+                        { ...selectedUser }     // Them
+                    ],
+                    lastMessage: null,
+                    updatedAt: new Date().toISOString()
+                };
+
+                setConversations(prev => [newConv, ...prev]);
+                setActiveChatId(conversationId);
+            }
+        } catch (error) {
+            console.error("Error starting chat:", error);
+            alert("Failed to start chat.");
+        }
+    };
 
     // 2. Global Socket Management
     useEffect(() => {
@@ -148,12 +182,19 @@ export default function ClientChatWrapper({ initialConversations, currentUserId,
             });
         };
 
+        // C. Receive Initial Online Users List
+        const onGetOnlineUsers = (users) => {
+            setOnlineUsers(new Set(users));
+        };
+
         socket.on('user_online', onUserOnline);
         socket.on('user_offline', onUserOffline);
+        socket.on('get_online_users', onGetOnlineUsers);
 
         return () => {
             socket.off('user_online', onUserOnline);
             socket.off('user_offline', onUserOffline);
+            socket.off('get_online_users', onGetOnlineUsers);
         };
     }, [currentUserId]);
 
@@ -162,8 +203,7 @@ export default function ClientChatWrapper({ initialConversations, currentUserId,
     let activeChat = conversations.find(chat => chat._id.toString() === activeChatId)
         // Fallback for when the chat ID is confirmed but the conversations list
         // hasn't been updated to include the newly created conversation yet.
-        // NOTE: This fallback needs to be more robust in production.
-        || { id: activeChatId, name: 'Loading Chat...' };
+        || { _id: activeChatId, name: 'Loading Chat...' };
 
     // Inject online status into active chat for ChatView
     if (activeChat && activeChat.participants) {
@@ -180,6 +220,67 @@ export default function ClientChatWrapper({ initialConversations, currentUserId,
     // 4. Logic to update the list if a new message arrives (deferred for later)
     // You would add a useEffect hook here to listen for socket events that update 'conversations'.
 
+    useEffect(() => {
+        if (!socket.connected) socket.connect();
+
+        const onReceiveMessageGlobal = (newMessage) => {
+            console.log("Global update received:", newMessage);
+
+            setConversations(prev => {
+                const convIndex = prev.findIndex(c => c._id.toString() === newMessage.conversationId);
+
+                // A. If Conversation exists in the list
+                if (convIndex > -1) {
+                    const updatedConv = { ...prev[convIndex] };
+
+                    // Check if this message is newer than what we have (deduplication)
+                    if (updatedConv.lastMessage && updatedConv.lastMessage._id === newMessage._id) {
+                        return prev; // Already updated
+                    }
+
+                    // Optimistic Read Status: If we are currently in this chat, mark as read immediately
+                    // This prevents the sidebar from showing "1 unread" while you are looking at the messages.
+                    let messageToStore = newMessage;
+                    if (activeChatId === newMessage.conversationId) {
+                        // Add current user to readBy if not present
+                        const readBy = newMessage.readBy || [];
+                        if (!readBy.includes(currentUserId)) {
+                            messageToStore = {
+                                ...newMessage,
+                                readBy: [...readBy, currentUserId]
+                            };
+                        }
+                    }
+
+                    updatedConv.lastMessage = messageToStore;
+                    updatedConv.updatedAt = messageToStore.createdAt;
+
+                    // Move to top
+                    const newAll = [...prev];
+                    newAll.splice(convIndex, 1);
+                    newAll.unshift(updatedConv);
+                    return newAll;
+                }
+
+                // B. If Conversation does NOT exist (Brand new chat initiated by someone else)
+                // Ideally, we should fetch the full conversation object here.
+                // For now, if we don't have it, we might need a way to fetch it or reload.
+                // But simply returning prev is safer than adding a broken object.
+                else {
+                    // Trigger a re-fetch of all conversations? Or fetch just this one?
+                    // For MVP, handling existing chats updating is the priority.
+                    return prev;
+                }
+            });
+        };
+
+        socket.on('receive_message', onReceiveMessageGlobal);
+
+        return () => {
+            socket.off('receive_message', onReceiveMessageGlobal);
+        };
+    }, []);
+
     return (
         <div className='flex h-screen bg-gray-50'>
             <Sidebar />
@@ -191,6 +292,7 @@ export default function ClientChatWrapper({ initialConversations, currentUserId,
                     setActiveChatId={setActiveChatId}
                     currentUserId={currentUserId}
                     onlineUsers={onlineUsers} // Pass for list indicators
+                    onStartNewChat={handleStartNewChat} // 🚨 FIX: Pass the handler
                 />
 
                 <ChatView

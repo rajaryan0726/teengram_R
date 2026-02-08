@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import Sidebar from '../Components/Sidebar'
-import { fetchuser, find_following, fetchfriendrequest, upload_written_post, fetchpost } from '@/actions/useractions'
+import { fetchuser, fetchFollowingAction, fetchFollowersAction, upload_written_post, fetchpost } from '@/actions/useractions'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { sendPrompt } from '@/utils/sendPrompt'
@@ -33,10 +33,14 @@ const page = () => {
     let u = await fetchuser(session.user.email)
     setform(u)
 
-    let follo = await find_following(session.user.email)
-    setfollowing(follo);
-    let folowing = await fetchfriendrequest(session.user.email)
-    setfollowers(folowing)
+    // "Following": People I sent requests to (Accepted)
+    let followingData = await fetchFollowingAction(session.user.email)
+    setfollowing(followingData);
+
+    // "Followers": People who sent requests to me (Accepted)
+    let followersData = await fetchFollowersAction(session.user.email)
+    setfollowers(followersData)
+
     console.log("user id is", u);
 
     let written = await fetchpost(u._id);
@@ -98,274 +102,259 @@ const page = () => {
   };
 
   return (
-    <>
-      <div className='flex'>
-        <Sidebar className='flex-1' />
-        <div className='flex flex-col w-full'>
-          <div className="flex justify-center items-center max-w-4xl mx-auto px-4 py-6">
-            {/* Profile Header */}
-            <div className="flex items-center gap-10 border-2 
-     rounded-xl m-2 p-4 
-      border-emerald-500">
-              {/* Avatar */}
-              <div className='flex flex-col items-center justify-center gap-5'>
-                <div className="flex flex-row w-32 h-32 rounded-full overflow-hidden border">
-                  <img
-                    src={form.profilepic}
-                    alt="Profile"
-                    className="w-full h-full object-cover"
-                  />
+    <div className="flex bg-gray-50 min-h-screen">
+      <Sidebar className="flex-1" />
+
+      <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
+        <div className="max-w-5xl mx-auto space-y-6">
+
+          {/* --- Profile Header Card --- */}
+          <div className="bg-white rounded-3xl shadow-xl overflow-hidden relative">
+            {/* Background Banner */}
+            <div className="h-32 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
+
+            <div className="px-8 pb-8">
+              <div className="relative flex flex-col md:flex-row items-end -mt-12 mb-6 gap-6">
+                {/* Avatar */}
+                <div className="relative">
+                  <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-white shadow-lg overflow-hidden bg-white">
+                    <img
+                      src={form.profilepic || "https://via.placeholder.com/150"}
+                      alt="Profile"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  {/* Verification Badge (Optional) */}
+                  {form.verified && (
+                    <div className="absolute bottom-2 right-2 bg-blue-500 text-white p-1 rounded-full border-2 border-white">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                  )}
                 </div>
-                <Link href={{
-                  pathname: "/verify",
-                  query: { name: form.name, institute_name: form.institute_name }
-                }}> <button className='cursor-pointer border-2 hover:bg-green-200 rounded-2xl m-auto p-2 flex items-center justify-center'>Verify Profile</button></Link>
+
+                {/* User Info & Actions */}
+                <div className="flex-1 w-full md:w-auto text-center md:text-left">
+                  <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-4">
+                    <div>
+                      <h1 className="text-3xl font-bold text-gray-900">{form.name || "User Name"}</h1>
+                      <p className="text-gray-500 font-medium">@{form.username || "username"}</p>
+                      {form.institute_name && (
+                        <p className="text-sm text-indigo-600 font-medium mt-1">{form.institute_name} {form.university ? `• ${form.university}` : ''}</p>
+                      )}
+                    </div>
+
+                    <div className="flex gap-3">
+                      <Link href={{
+                        pathname: "/Updateuser",
+                        query: { email: form.email }
+                      }}>
+                        <button className="px-6 py-2 bg-white border border-gray-200 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm">
+                          Edit Profile
+                        </button>
+                      </Link>
+
+                      <Link href={{
+                        pathname: "/verify",
+                        query: { name: form.name, institute_name: form.institute_name }
+                      }}>
+                        <button className="px-6 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold rounded-xl hover:shadow-lg hover:opacity-90 transition-all shadow-md">
+                          Verify Check
+                        </button>
+                      </Link>
+                    </div>
+                  </div>
+
+                  {/* Bio */}
+                  <div className="mt-4 max-w-2xl text-gray-600 leading-relaxed">
+                    {form.bio || "No bio yet."}
+                  </div>
+                </div>
               </div>
 
-              {/* User Info */}
-              <div className="flex-1">
-                <div className="flex items-center gap-4">
-
-                  <h2 className="text-2xl font-semibold">{form.username}</h2>
-                  <Link href={{
-                    pathname: "/Updateuser",
-                    query: { username: form.email }
-                  }}> <button
-
-                    className="px-4 py-1 text-sm border rounded-lg hover:bg-gray-100"
-                  >
-                      Edit Profile
-                    </button></Link>
+              {/* Stats Bar */}
+              <div className="grid grid-cols-3 gap-4 border-t border-gray-100 pt-6">
+                <div className="text-center p-4 rounded-2xl bg-gray-50 hover:bg-indigo-50 transition-colors cursor-pointer">
+                  <span className="block text-2xl font-bold text-indigo-600">{written_post.length}</span>
+                  <span className="text-gray-500 text-sm font-medium uppercase tracking-wide">Posts</span>
                 </div>
-
-                {/* Stats */}
-                <div className="flex gap-6 mt-4">
-                  <span>
-                    <b>coming</b> posts
-                  </span>
-                  <span>
-                    <b onClick={() => { setseefollower(true) }}>{followers.length}</b> followers
-                  </span>
-                  <span>
-                    <b onClick={() => { setseefollower(false) }}>{following.length}</b> following
-                  </span>
+                <div
+                  onClick={() => setseefollower(true)}
+                  className={`text-center p-4 rounded-2xl transition-colors cursor-pointer ${seefollower ? 'bg-indigo-50 ring-2 ring-indigo-100' : 'bg-gray-50 hover:bg-gray-100'}`}
+                >
+                  <span className="block text-2xl font-bold text-indigo-600">{followers.length}</span>
+                  <span className="text-gray-500 text-sm font-medium uppercase tracking-wide">Followers</span>
                 </div>
-
-                {/* Bio */}
-                <div className="mt-4">
-                  <p className="font-semibold">{form.name}</p>
-                  <p className="text-sm">{form.bio}</p>
+                <div
+                  onClick={() => setseefollower(false)}
+                  className={`text-center p-4 rounded-2xl transition-colors cursor-pointer ${!seefollower ? 'bg-indigo-50 ring-2 ring-indigo-100' : 'bg-gray-50 hover:bg-gray-100'}`}
+                >
+                  <span className="block text-2xl font-bold text-indigo-600">{following.length}</span>
+                  <span className="text-gray-500 text-sm font-medium uppercase tracking-wide">Following</span>
                 </div>
               </div>
-              <button onClick={() => { setpost(true) }}>Post Now!</button>
             </div>
           </div>
 
+          {/* --- Post Creation Section --- */}
+          <div className="flex justify-end">
+            <button
+              onClick={() => setpost(!post)}
+              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all"
+            >
+              <span>✨ Create New Post</span>
+            </button>
+          </div>
 
-          {post ? <>
-            <div className="max-w-2xl mx-auto my-5 bg-white rounded-lg shadow-xl p-8 border border-gray-200">
-              <form action={handleSubmit} >
-                <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Write to laugh, to learn, to understand, to share</h2>
+          {post && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100"
+            >
+              <form action={handleSubmit}>
+                <h2 className="text-2xl font-bold text-gray-800 mb-6 font-serif">Share your thoughts 💭</h2>
 
-                {/* Post Content */}
-                <div className="mb-6">
-                  <label htmlFor="post-content" className="block text-gray-700 font-semibold mb-2">Post Content</label>
-                  <textarea
-                    value={Written_form.content ? Written_form.content : ""}
-                    onChange={handleChange}
-                    type="text" name='content'
-                    id="content"
-                    rows="6"
-                    placeholder="What's on your mind? Share your thoughts with others let your thoughts shine!!!"
-                    className="w-full px-4 py-3 text-gray-700 bg-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors duration-200"
-                    required
-                  ></textarea>
-                </div>
+                <textarea
+                  value={Written_form.content || ""}
+                  onChange={handleChange}
+                  name="content"
+                  rows="4"
+                  placeholder="What's making you laugh or think today?"
+                  className="w-full px-4 py-3 bg-gray-50 rounded-xl border-0 focus:ring-2 focus:ring-indigo-500 transition-all mb-4 text-gray-800 placeholder-gray-400"
+                  required
+                />
 
-                {/* Caption Input and Generator Button */}
-                <div className="mb-6">
-                  <label htmlFor="caption" className="block text-gray-700 font-semibold mb-2">Caption</label>
-                  <div className="relative flex items-stretch">
+                <div className="flex flex-col md:flex-row gap-4">
+                  <div className="flex-1 relative">
                     <input
-                      type="text"
-                      id="caption"
-                      name="caption"
-                      value={Written_form.caption ? Written_form.caption : ""}
+                      value={Written_form.caption || ""}
                       onChange={handleChange}
-                      placeholder="Add a caption, or generate one..."
-                      className="flex-grow px-4 py-3 text-gray-700 bg-gray-100 rounded-lg rounded-r-none focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors duration-200"
+                      name="caption"
+                      placeholder="Add a witty caption..."
+                      className="w-full px-4 py-3 bg-gray-50 rounded-xl border-0 focus:ring-2 focus:ring-indigo-500 transition-all"
                     />
                     <button
-                      onClick={handleGenerate} // 🚨 Use the new handler 🚨
-                      className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-r-lg transition-colors duration-200 disabled:bg-gray-400"
-                      disabled={isGenerating || !Written_form.content} // Disable if generating or no content
+                      onClick={handleGenerate}
+                      disabled={isGenerating || !Written_form.content}
+                      className="absolute right-2 top-2 px-3 py-1 bg-indigo-100 text-indigo-700 text-xs font-bold rounded-lg hover:bg-indigo-200 disabled:opacity-50 transition-colors"
                     >
-                      {isGenerating ? 'Generating...' : 'Generate'}
+                      {isGenerating ? '🪄 Generating...' : '🪄 AI Caption'}
                     </button>
                   </div>
-                  {/* Caption Error Display */}
-                  {captionError && (
-                    <p className="text-sm text-red-500 mt-2">{captionError}</p>
-                  )}
-                </div>
 
-                {/* Submit Button */}
-                <div className="text-center">
-                  <button
-                    type="submit"
-                    className="w-full md:w-auto px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-md transition-transform transform hover:scale-105 duration-300"
-                  >
-                    Post Content
+                  <button type="submit" className="px-8 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-colors shadow-md">
+                    Post It!
                   </button>
                 </div>
+                {captionError && <p className="text-red-500 text-sm mt-2">{captionError}</p>}
               </form>
-            </div>
-          </> :
-            (
+            </motion.div>
+          )}
 
-                  //                   user_id:{type:String,required:true},
-    // caption:{type:String},
-    // content:{type:String,required:true},
-    // institute_name:{type:String},
-    // university_name:{type:String},
-    // user_name:{type:String},
-    // profilepic:{type:String},
+          {/* --- Main Content Grid --- */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
-              <div className="flex flex-row gap-8 w-full bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800 p-8 rounded-lg">
+            {/* Left Column: Your Posts */}
+            <div className="bg-white rounded-3xl shadow-lg p-6 border border-gray-100">
+              <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+                📝 Your Timeline
+              </h2>
 
-                \    <div className="w-1/2 bg-white/80 dark:bg-gray-900/70 rounded-2xl shadow-xl border border-blue-100 dark:border-gray-700 p-6 backdrop-blur-sm">
-                  <h2 className="text-2xl font-bold text-blue-700 dark:text-blue-300 mb-4 flex items-center gap-2">
-                    📝 Your Posts
-                  </h2>
-
-                  {written_post.length === 0 ? (
-                    <div className="text-center text-gray-500 dark:text-gray-400 mt-10">
-                      No posts yet! 💭 Start sharing your thoughts!
-                    </div>
-                  ) : (
-                    <div className="flex flex-col gap-4">
-                      {written_post.map((post, index) => (
-                        <motion.div
-                          key={index}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: index * 0.05 }}
-                          whileHover={{ scale: 1.02 }}
-                          className="p-4 bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-gray-800 dark:to-gray-700 border border-blue-200 dark:border-gray-600 rounded-xl shadow-md"
-                        >
-                          <div className="flex items-center gap-3 mb-2">
-                            <img
-                              src={post.profilepic}
-                              alt="user"
-                              className="w-10 h-10 rounded-full object-cover border border-blue-300"
-                            />
-                            <div>
-                              <p className="font-semibold text-gray-800 dark:text-gray-100">{post.user_name}</p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400">{post.institute_name}</p>
-                            </div>
-                          </div>
-                          <p className="text-gray-700 dark:text-gray-300 mb-2">{post.content}</p>
-                          {post.caption && (
-                            <p className="text-sm italic text-blue-600 dark:text-blue-300">"{post.caption}"</p>
-                          )}
-                        </motion.div>
-                      ))}
-                    </div>
-                  )}
+              {written_post.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-10 text-gray-400">
+                  <p>No posts yet.</p>
                 </div>
-
-                <div className="w-1/2 bg-white/80 dark:bg-gray-900/70 rounded-2xl shadow-xl border border-purple-100 dark:border-gray-700 p-6 backdrop-blur-sm">
-                  {seefollower ? (
-                    <>
-                      <h2 className="text-2xl font-bold text-purple-700 dark:text-purple-300 mb-4 flex items-center gap-2">
-                        🌸 Your Followers
-                      </h2>
-                      {followers.length === 0 ? (
-                        <div className="text-center text-gray-500 dark:text-gray-400 mt-10">
-                          No followers yet 😢
+              ) : (
+                <div className="space-y-4">
+                  {written_post.map((p, i) => (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      whileInView={{ opacity: 1 }}
+                      viewport={{ once: true }}
+                      key={i}
+                      className="bg-gray-50 p-5 rounded-2xl hover:shadow-md transition-shadow border border-gray-100"
+                    >
+                      <div className="flex items-center gap-3 mb-3">
+                        <img src={p.profilepic} className="w-10 h-10 rounded-full object-cover" alt="avatar" />
+                        <div>
+                          <h4 className="font-bold text-gray-900">{p.user_name}</h4>
+                          <p className="text-xs text-gray-500">{p.institute_name}</p>
                         </div>
-                      ) : (
-
-
-
-                        <div className="grid sm:grid-cols-2 gap-6">
-                          {followers.map((user, i) => (
-                            <motion.div
-                              key={i}
-                              initial={{ opacity: 0, y: 20 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ delay: i * 0.05 }}
-                              whileHover={{ scale: 1.05 }}
-                              className="p-4 rounded-2xl bg-gradient-to-b from-purple-50 to-pink-50 
-                             dark:from-gray-800 dark:to-gray-700 shadow-lg 
-                             border border-purple-200 dark:border-purple-600 
-                             flex flex-col items-center hover:shadow-xl transition"
-                            >
-                              <img
-                                src={user.sender_profilepic}
-                                alt={user.sender_email}
-                                width={70}
-                                height={70}
-                                className="rounded-full object-cover border-4 border-purple-400 shadow-sm"
-                              />
-                              {/* <h3 className="mt-3 font-semibold text-gray-800 dark:text-gray-100">{user.name}</h3> */}
-                             <Link href={{
-                pathname:"/ViewFriends",
-                query:{friend_email:user.sender_email,user_email:session.user.email}
-              }}> <p className="text-sm text-gray-500 dark:text-gray-400">@{user.sender_email}</p></Link>
-                              {/* <p className="text-xs mt-2 text-center text-gray-500 dark:text-gray-400 line-clamp-2">{user.bio}</p> */}
-                            </motion.div>
-                          ))}
+                      </div>
+                      <p className="text-gray-800 leading-relaxed">{p.content}</p>
+                      {p.caption && (
+                        <div className="mt-3 pl-4 border-l-4 border-indigo-200 italic text-indigo-600 text-sm">
+                          {p.caption}
                         </div>
                       )}
-                    </>
-                  ) : (
-                    <>
-                      <h2 className="text-2xl font-bold text-blue-700 dark:text-blue-300 mb-4 flex items-center gap-2">
-                        💫 People You Follow
-                      </h2>
-                      {following.length === 0 ? (
-                        <div className="text-center text-gray-500 dark:text-gray-400 mt-10">
-                          You’re not following anyone yet 👀
-                        </div>
-                      ) : (
-                        <div className="grid sm:grid-cols-2 gap-6">
-                          {following.map((user, i) => (
-                            <motion.div
-                              key={i}
-                              initial={{ opacity: 0, y: 20 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ delay: i * 0.05 }}
-                              whileHover={{ scale: 1.05 }}
-                              className="p-4 rounded-2xl bg-gradient-to-b from-blue-50 to-cyan-50 
-                             dark:from-gray-800 dark:to-gray-700 shadow-lg 
-                             border border-blue-200 dark:border-blue-600 
-                             flex flex-col items-center hover:shadow-xl transition"
-                            >
-                              <img
-                                src={user.sender_profilepic}
-                                alt={user.name}
-                                width={70}
-                                height={70}
-                                className="rounded-full object-cover border-4 border-blue-400 shadow-sm"
-                              />
-                              {/* <h3 className="mt-3 font-semibold text-gray-800 dark:text-gray-100">{user.name}</h3> */}
-                              <p className="text-sm text-gray-500 dark:text-gray-400">@{user.sender_email}</p>
-                              {/* <p className="text-xs mt-2 text-center text-gray-500 dark:text-gray-400 line-clamp-2">{user.bio}</p> */}
-                            </motion.div>
-                          ))}
-                        </div>
-                      )}
-                    </>
-                  )}
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Right Column: Toggles (Followers/Following) */}
+            <div className="bg-white rounded-3xl shadow-lg p-6 border border-gray-100 h-fit sticky top-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-gray-800">
+                  {seefollower ? '🌸 Followers' : '💫 Following'}
+                </h2>
+                <div className="flex bg-gray-100 p-1 rounded-xl">
+                  <button
+                    onClick={() => setseefollower(true)}
+                    className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${seefollower ? 'bg-white shadow text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
+                  >
+                    Followers
+                  </button>
+                  <button
+                    onClick={() => setseefollower(false)}
+                    className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${!seefollower ? 'bg-white shadow text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
+                  >
+                    Following
+                  </button>
                 </div>
               </div>
-            )}
+
+              <div className="space-y-4 max-h-[600px] overflow-y-auto custom-scrollbar pr-2">
+                {(seefollower ? followers : following).length === 0 ? (
+                  <div className="text-center py-10 text-gray-400">
+                    {seefollower ? "No followers yet." : "Not following anyone yet."}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {(seefollower ? followers : following).map((user, i) => (
+                      <motion.div
+                        key={i}
+                        whileHover={{ scale: 1.02 }}
+                        className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl"
+                      >
+                        <img
+                          src={user.sender_profilepic}
+                          alt="avatar"
+                          className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm"
+                        />
+                        <div className="min-w-0">
+                          <Link
+                            href={{ pathname: "/ViewFriends", query: { friend_email: user.sender_email, user_email: session.user.email } }}
+                            className="block font-semibold text-gray-900 truncate hover:text-indigo-600"
+                          >
+                            {user.sender_email.split('@')[0]}
+                          </Link>
+                          <p className="text-xs text-gray-500 truncate">@{user.sender_email}</p>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+          </div>
         </div>
-      </div>
-
-    </>
-
+      </main>
+    </div>
   )
 }
 

@@ -4,167 +4,187 @@ import { useSession } from 'next-auth/react'
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { updateProfile,fetchuser } from '@/actions/useractions'
+import { updateProfile, fetchuser } from '@/actions/useractions'
 
 const page = () => {
-    const searchParams = useSearchParams()
+  const searchParams = useSearchParams()
 
-    const router = useRouter()
-    const { data: session, update } = useSession()
-    const [form, setform] = useState({})
+  const router = useRouter()
+  const { data: session, update } = useSession()
+  const [form, setform] = useState({})
 
-    useEffect(() => {
-        if (!session) {
-            router.push("/login")
-        }
-        const email = searchParams.get('email')
-        // if (username) {
-            getdata(email)
-        //}
-    }, [router, session])
-
-    const getdata = async (email) => {
-      console.log(email)
-        // let u = await fetchuser(username)
-        let u = await fetchuser(session.user.email)
-
-        setform(u)
-        console.log(u);
-        
+  useEffect(() => {
+    if (!session) {
+      router.push("/login")
     }
-    const handleChange = (e) => {
-        setform({ ...form, [e.target.name]: e.target.value })
+    const email = searchParams.get('email')
+    // if (username) {
+    getdata(email)
+    //}
+  }, [router, session])
+
+  const getdata = async (email) => {
+    console.log(email)
+    // let u = await fetchuser(username)
+    let u = await fetchuser(session.user.email)
+
+    setform(u)
+    console.log(u);
+
+  }
+  const handleChange = (e) => {
+    setform({ ...form, [e.target.name]: e.target.value })
+  }
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setform(prev => ({ ...prev, profilepic: reader.result }));
+      };
+      reader.readAsDataURL(file);
     }
+  };
 
-    const handleSubmit = async (e) => {
-      console.log("My username",form.email)
-        let a = await updateProfile(e, form.email)
-        console.log("profile updated")
-        router.push("/User")
-    }
+  const handleSubmit = async (e) => {
+    // NOTE: e is FormData when using action prop
+    // We need to pass the current username/email as the "oldusername" identifier
+    // In the original code, it was passing form.email. 
+    // We will ensure we pass the correct identifier expected by the backend.
 
-    return (
-       <div>
-  <div className='flex justify-center items-center bg-slate-600'>
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-      <form action={handleSubmit}>
-        <div className="bg-white p-6 rounded-xl w-96 shadow-lg">
-          <h2 className="text-lg font-semibold mb-4">Edit Profile</h2>
+    let a = await updateProfile(e, form.email)
+    console.log("profile updated")
+    router.push("/User")
+  }
 
-          {/* Profile Pic Upload */}
-          <div className="flex flex-col items-center mb-4">
-            <img
-              src={form.profilepic ? form.profilepic : "https://via.placeholder.com/100"}
-              alt="profilpic"
-              className="w-24 h-24 rounded-full object-cover mb-2"
-            />
-            <input
-              type="file"
-              accept="image/*"
-              className="text-sm"
-              // onChange={handleFileChange} (optional)
-            />
-          </div>
+  return (
+    <div>
+      <div className='flex justify-center items-center bg-slate-600'>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+          <form action={handleSubmit}>
+            <div className="bg-white p-6 rounded-xl w-96 shadow-lg">
+              <h2 className="text-lg font-semibold mb-4 text-gray-900">Edit Profile</h2>
 
-        
-          {/* Email */}
-          <div className="mb-3">
-            <label className="block text-sm font-medium">Email</label>
-            <input
-            value={form.email?form.email:""}
-              readOnly
-              type="email"
-              name="email" id="email"
-              className="w-full border px-3 py-2 rounded-lg mt-1" 
-            />
-          </div>
+              {/* Profile Pic Upload */}
+              <div className="flex flex-col items-center mb-4">
+                <img
+                  src={form.profilepic ? form.profilepic : "https://via.placeholder.com/100"}
+                  alt="profilpic"
+                  className="w-24 h-24 rounded-full object-cover mb-2"
+                />
 
-<div>
-          {/* Username */}
-          <div className="mb-3">
-            <label className="block text-sm font-medium">Username</label>
-            <input
-            value={form.username?form.username:""}
-            onChange={handleChange}
-              type="text"
-              name="username" id="username"
-              className="w-full border px-3 py-2 rounded-lg mt-1" 
-            />
-          </div>
+                {/* Hidden input to send the Base64 string with FormData */}
+                <input type="hidden" name="profilepic" value={form.profilepic || ""} />
 
-          {/* Name */}
-          <div className="mb-3">
-            <label className="block text-sm font-medium">Name as per the Institute idcard</label>
-            <input
-              className="w-full border px-3 py-2 rounded-lg mt-1"
-               value={form.name?form.name:""}
-            onChange={handleChange}
-              type="text"
-              name="name" id="name"
-            />
-          </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="text-sm text-gray-600"
+                  onChange={handleFileChange}
+                />
+              </div>
 
-          {/* Bio */}
-          <div className="mb-3">
-            <label className="block text-sm font-medium">Bio</label>
-            <input className="w-full border px-3 py-2 rounded-lg mt-1"
-            value={form.bio?form.bio:""}
-            onChange={handleChange}
-              type="text"
-              name="bio" id="bio"
-              rows="3"/>          
-</div>
-<div className="mb-3">
-            <label className="block text-sm font-medium">Your Age</label>
-            <input className="w-full border px-3 py-2 rounded-lg mt-1"
-            value={form.age?form.age:""}
-            onChange={handleChange}
-              type="text"
-              name="age" id="age"
-              rows="3"/>          
-</div>
-      <div className="mb-3">
-            <label className="block text-sm font-medium">Institue Name</label>
-            <input className="w-full border px-3 py-2 rounded-lg mt-1"
-            value={form.institute_name?form.institute_name:""}
-            onChange={handleChange}
-              type="text"
-              name="institute_name" id="institute_name"
-              rows="3"/>          
-</div>
 
-<div className="mb-3">
-            <label className="block text-sm font-medium">Univeristy Name</label>
-            <input className="w-full border px-3 py-2 rounded-lg mt-1"
-            value={form.university?form.university:""}
-            onChange={handleChange}
-              type="text"
-              name="university" id="university"
-              rows="3"/>          
-</div>
+              {/* Email */}
+              <div className="mb-3">
+                <label className="block text-sm font-medium text-gray-700">Email</label>
+                <input
+                  value={form.email ? form.email : ""}
+                  readOnly
+                  type="email"
+                  name="email" id="email"
+                  className="w-full border px-3 py-2 rounded-lg mt-1 bg-gray-100 text-gray-500 cursor-not-allowed"
+                />
+              </div>
 
-        </div>{/* Buttons */}
-          <div className="flex justify-end gap-3 mt-4">
-            <button
-             onClick={() => { router.push("/User") }}
-              className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600"
-            >
-              Save
-            </button>
-          </div>
-          </div>
-      </form>
+              <div>
+                {/* Username */}
+                <div className="mb-3">
+                  <label className="block text-sm font-medium text-gray-700">Username</label>
+                  <input
+                    value={form.username ? form.username : ""}
+                    onChange={handleChange}
+                    type="text"
+                    name="username" id="username"
+                    className="w-full border px-3 py-2 rounded-lg mt-1 text-gray-900"
+                  />
+                </div>
+
+                {/* Name */}
+                <div className="mb-3">
+                  <label className="block text-sm font-medium text-gray-700">Name as per the Institute idcard</label>
+                  <input
+                    className="w-full border px-3 py-2 rounded-lg mt-1 text-gray-900"
+                    value={form.name ? form.name : ""}
+                    onChange={handleChange}
+                    type="text"
+                    name="name" id="name"
+                  />
+                </div>
+
+                {/* Bio */}
+                <div className="mb-3">
+                  <label className="block text-sm font-medium text-gray-700">Bio</label>
+                  <input className="w-full border px-3 py-2 rounded-lg mt-1 text-gray-900"
+                    value={form.bio ? form.bio : ""}
+                    onChange={handleChange}
+                    type="text"
+                    name="bio" id="bio"
+                  />
+                </div>
+                <div className="mb-3">
+                  <label className="block text-sm font-medium text-gray-700">Your Age</label>
+                  <input className="w-full border px-3 py-2 rounded-lg mt-1 text-gray-900"
+                    value={form.age ? form.age : ""}
+                    onChange={handleChange}
+                    type="text"
+                    name="age" id="age"
+                  />
+                </div>
+                <div className="mb-3">
+                  <label className="block text-sm font-medium text-gray-700">Institue Name</label>
+                  <input className="w-full border px-3 py-2 rounded-lg mt-1 text-gray-900"
+                    value={form.institute_name ? form.institute_name : ""}
+                    onChange={handleChange}
+                    type="text"
+                    name="institute_name" id="institute_name"
+                  />
+                </div>
+
+                <div className="mb-3">
+                  <label className="block text-sm font-medium text-gray-700">Univeristy Name</label>
+                  <input className="w-full border px-3 py-2 rounded-lg mt-1 text-gray-900"
+                    value={form.university ? form.university : ""}
+                    onChange={handleChange}
+                    type="text"
+                    name="university" id="university"
+                  />
+                </div>
+
+              </div>{/* Buttons */}
+              <div className="flex justify-end gap-3 mt-4">
+                <button
+                  type="button"
+                  onClick={() => { router.push("/User") }}
+                  className="px-4 py-2 rounded-lg bg-gray-200 text-gray-800 hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600"
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
-  </div>
-</div>
 
-    )
+  )
 }
 
 export default page

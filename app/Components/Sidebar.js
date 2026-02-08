@@ -25,7 +25,7 @@ const Sidebar = () => {
     { Icon: Search, label: "Search", path: "/search" },
     { Icon: Compass, label: "Explore", path: "/schoolCompetitions" },
     { Icon: Film, label: "Shorts", path: "/friends" }, // Renamed for social feel
-    { Icon: MessageCircle, label: "Messages", path: "/messages" },
+    { Icon: MessageCircle, label: "Messages", path: "/Chat" },
     { Icon: Heart, label: "Activity", path: "/Notification" },
     { Icon: PlusSquare, label: "Create", path: "/create" },
     { Icon: Trophy, label: "Arena", path: "/teenarena" },

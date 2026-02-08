@@ -1,17 +1,23 @@
 // socketHandlers/chat.js
 // This file is required and called by your custom 'server.js' file
 
-// 🚨 IMPORTANT: Use relative path to access the actions folder
 import { saveMessageAndGetDetails } from '../actions/useractions.js';
+import mongoose from 'mongoose';
 
 export default (io, socket, onlineUsers) => {
 
     // 0. EVENT: User comes online
     socket.on('register_user', (userId) => {
         onlineUsers.set(userId, socket.id);
+        socket.join(userId); // 🚨 JOIN USER ROOM
+
         // Broadcast online status to everyone
         io.emit('user_online', userId);
-        console.log(`User ${userId} is Online`);
+
+        // 🚨 SEND EXISTING ONLINE USERS TO THE NEW USER
+        socket.emit('get_online_users', Array.from(onlineUsers.keys()));
+
+        console.log(`User ${userId} is Online and joined room ${userId}`);
     });
 
     // 1. EVENT: client sends 'join_chat'
@@ -45,6 +51,29 @@ export default (io, socket, onlineUsers) => {
             // B. REAL-TIME BROADCAST: Send the message instantly to the specific room
             io.to(conversationId).emit('receive_message', newMessage);
 
+            // 🚨 SIDEBAR UPDATE: Notify all participants via their User Rooms
+            // We need to fetch the conversation to know the participants
+            //  const conversation = await Conversation.findById(conversationId); // We might already have it
+            //  if (conversation && conversation.participants) {
+            //      conversation.participants.forEach(pId => {
+            //          io.to(pId.toString()).emit('receive_message', newMessage); 
+            //      });
+            //  }
+            // Optimization: We can do this only if we want the sidebar to update for users NOT in the chat room.
+            // Since User B is in 'conversationId' ONLY if they have it open, we MUST emit to User B's personal room.
+            // But we must avoid double-emitting if they are in the chat room? 
+            // Client-side deduplication is easier.
+
+            // Re-fetching conversation to get participants if not already available
+            const conversationForBroadcast = await mongoose.model('Conversation').findById(conversationId);
+            if (conversationForBroadcast && conversationForBroadcast.participants) {
+                conversationForBroadcast.participants.forEach(pId => {
+                    const pidStr = pId.toString();
+                    // Emit to the user's personal room
+                    io.to(pidStr).emit('receive_message', newMessage);
+                });
+            }
+
             console.log(`Message broadcast to room ${conversationId}`);
 
         } catch (error) {
@@ -70,5 +99,23 @@ export default (io, socket, onlineUsers) => {
         // Notify the *original sender* that their messages were read
         socket.to(conversationId).emit('messages_read', { conversationId, readByUserId: userId });
         console.log(`Read receipt sent in room ${conversationId}`);
+    });
+
+    // 5. EVENT: Disconnect
+    socket.on('disconnect', () => {
+        // Find which user disconnected
+        let disconnectedUserId = null;
+        for (const [userId, socketId] of onlineUsers.entries()) {
+            if (socketId === socket.id) {
+                disconnectedUserId = userId;
+                break;
+            }
+        }
+
+        if (disconnectedUserId) {
+            onlineUsers.delete(disconnectedUserId);
+            io.emit('user_offline', disconnectedUserId);
+            console.log(`User ${disconnectedUserId} went offline`);
+        }
     });
 };

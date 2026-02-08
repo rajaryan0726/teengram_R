@@ -8,13 +8,20 @@ import Conversation from '../models/Conversation.js'
 import Message from '../models/Message.js'
 import Written_Post from '../models/Written_Post.js'
 
+// Helper to serialize Mongoose documents
+const serializeDoc = (doc) => {
+    if (!doc) return null;
+    const { _id, ...rest } = doc;
+    return {
+        ...rest,
+        _id: _id.toString(),
+    };
+};
+
 export const getUserIdByEmail = async (email) => {
     await connectDb();
     try {
-        // Find the user but only retrieve the _id field
         const user = await User.findOne({ email }).select('_id').lean();
-
-        // Return the _id as a string, which is needed for Mongoose functions
         return user ? user._id.toString() : null;
     } catch (error) {
         console.error("Error finding user by email:", error);
@@ -26,9 +33,8 @@ export const getUserIdByEmail = async (email) => {
 export const fetchuser = async (email) => {
     await connectDb()
     console.log("connected to db for:", email);
-    let u = await User.findOne({ email: email })
-    let user = u.toObject({ flattenObjectIds: true })
-    return user
+    let u = await User.findOne({ email: email }).lean();
+    return serializeDoc(u);
 }
 
 
@@ -40,7 +46,7 @@ export const updateProfile = async (data, oldusername) => {
 
     if (oldusername == ndata.username) {
         //checking if the username is not taken already
-        let u = await User.findOne({ username: ndata.username })
+        let u = await User.findOne({ username: ndata.username }).lean();
         console.log("profile updating for user different username");
 
         if (u) {
@@ -49,8 +55,6 @@ export const updateProfile = async (data, oldusername) => {
         //update the rest of the information
         await User.updateOne({ email: ndata.email }, ndata)
         console.log("Here is the email we use", ndata.email);
-
-
     }
     if (oldusername != ndata.username) {
         //if the username not changed simply change the rest
@@ -59,13 +63,42 @@ export const updateProfile = async (data, oldusername) => {
     }
 }
 
-// function to find other user
+// function to find other user - ORIGINAL (Keep for backward compatibility if needed)
 export const fetchotheruser = async (email) => {
     await connectDb();
     console.log("fetching all the users");
-    //the below query will find all the user except the one whose email is mentioned in $ne
-    let u = await User.find({ email: { $ne: email } });
-    return u;
+    let users = await User.find({ email: { $ne: email } }).lean();
+    return users.map(user => serializeDoc(user));
+}
+
+// NEW: Search Users by Name or Username
+export const searchUsersAction = async (query, currentUserEmail) => {
+    await connectDb();
+    if (!query) return [];
+
+    console.log("Searching users for query:", query);
+    const regex = new RegExp(query, 'i'); // Case-insensitive regex
+
+    try {
+        const users = await User.find({
+            $and: [
+                { email: { $ne: currentUserEmail } }, // Exclude current user
+                {
+                    $or: [
+                        { username: { $regex: regex } },
+                        { name: { $regex: regex } },
+                        { email: { $regex: regex } }
+                    ]
+                }
+            ]
+        }).limit(20).lean(); // Limit results for performance
+
+        // Convert _id to string for serialization
+        return users.map(user => serializeDoc(user));
+    } catch (error) {
+        console.error("Error searching users:", error);
+        return [];
+    }
 }
 
 //function to make friend first other function to accept frienship
@@ -76,8 +109,8 @@ export const makefriend = async (sender_email, reciever_email, sender_profilepic
         sender_email: sender_email,
         reciever_email: reciever_email,
         sender_profilepic: sender_profilepic,
-
     })
+    // No return needed, or return null/true
 }
 //function to check if the your request is accepted or not 
 export const checkfriendstatus = async (useremail, friendemail) => {
@@ -86,12 +119,9 @@ export const checkfriendstatus = async (useremail, friendemail) => {
     let s = await Friends.findOne({
         sender_email: useremail,
         reciever_email: friendemail,
-    })
-    if (s) {
-        let status = s.toObject({ flattenObjectIds: true })
-        return status
-    }
-    return false
+    }).lean();
+
+    return serializeDoc(s) || false;
 }
 
 //function to check if you have accepted the request or not
@@ -101,26 +131,29 @@ export const checkuserrequeststatus = async (useremail, friendemail) => {
     let s = await Friends.findOne({
         reciever_email: useremail,
         sender_email: friendemail,
-    })
-    if (s) {
-        let status = s.toObject({ flattenObjectIds: true })
-        return status
-    }
-    return false;
+    }).lean();
+
+    return serializeDoc(s) || false;
 }
 
-// function to find all the friend request for the user
+// function to find all the friend request for the user (RECEIVED)
 export const fetchfriendrequest = async (useremail) => {
     await connectDb();
     console.log("fetching all the request pending for the user to make friends");
-    //query to find all friend request where request_accepted is false
-    // let u=await Friends.find({reciever_email:useremail,request_accepted:false});
-    let u = await Friends.find({ reciever_email: useremail });
+    let u = await Friends.find({ reciever_email: useremail }).lean();
 
-    return u;
+    return u.map(req => serializeDoc(req));
 }
 
-
+// NEW: Fetch requests SENT by the user
+export const fetchSentFriendRequestsAction = async (useremail) => {
+    await connectDb();
+    console.log("fetching requests sent by user", useremail);
+    // Find all documents where I am the sender
+    let sent = await Friends.find({ sender_email: useremail }).lean();
+    // Convert _id to string
+    return sent.map(req => serializeDoc(req));
+}
 
 //function to accept the request
 export const accept_request = async (id) => {
@@ -132,24 +165,35 @@ export const accept_request = async (id) => {
         { _id: id },
         { $set: { request_accepted: true } }
     )
+    return { success: true };
 }
 
 
-//function to check the no of following,the ones you follow means request is accepted
-export const find_following = async (useremail) => {
+// NEW: Fetch "Following" (People I sent requests to AND were accepted)
+export const fetchFollowingAction = async (useremail) => {
     await connectDb();
-    console.log("finding the ones you follow", useremail);
+    console.log("finding the ones you follow (you sent request & accepted)", useremail);
+    // Logic: I am sender, request is accepted
+    let f = await Friends.find({
+        sender_email: useremail,
+        request_accepted: true,
+    }).lean();
+
+    return f.map(doc => serializeDoc(doc));
+}
+
+// NEW: Fetch "Followers" (People who sent requests to me AND I accepted)
+export const fetchFollowersAction = async (useremail) => {
+    await connectDb();
+    console.log("finding your followers (they sent request & accepted)", useremail);
+    // Logic: I am receiver, request is accepted
     let f = await Friends.find({
         reciever_email: useremail,
         request_accepted: true,
-    })
+    }).lean();
 
-    return f;
+    return f.map(doc => serializeDoc(doc));
 }
-// user_id:{type:String,required:true},
-//     caption:{type:String},
-//     institute_name:{type:String},
-//     university_name:{type:String},  institute_name, form.university_name
 
 //Upload wriiten_post
 export const upload_written_post = async (data, user_id, institute_name, university, profilepic, user_name) => {
@@ -172,31 +216,20 @@ export const upload_written_post = async (data, user_id, institute_name, univers
     return false
 }
 
-
-// await connectDb();
-//     console.log("fetching all the users");
-//     //the below query will find all the user except the one whose email is mentioned in $ne
-//     let u=await User.find({email:{$ne:email}});
-//     return u;
-//  let u=await Friends.find({reciever_email:useremail});
-
-//     return u;
 //fetch the writtenpost for the user
 export const fetchpost = async (user_id) => {
     await connectDb();
     console.log("fetching the post for the user", user_id);
-    let p = await Written_Post.find({ user_id: user_id });
+    let p = await Written_Post.find({ user_id: user_id }).lean();
     console.log(p);
 
-    return p;
-
+    return p.map(doc => serializeDoc(doc));
 }
-
-//verification
 
 
 //chat related query4
 //Retrieves all conversations a user is part of, with key related data populated.
+// NOTE: Deep population needs careful serialization if using .lean() with complex types
 export const getConversationsForUser = async (userId) => {
     try {
         const conversations = await Conversation.find({
@@ -211,13 +244,29 @@ export const getConversationsForUser = async (userId) => {
             .populate({
                 path: 'participants',
                 model: 'User',
-                select: 'name username profilePic', // Get participant details
+                select: 'name username profilepic', // Get participant details
             })
             .lean() // Returns plain JavaScript objects for efficiency
             .exec();
 
-        // Return the clean array for frontend processing
-        return conversations;
+        // Manual serialization map
+        return conversations.map(chat => {
+            const { _id, lastMessage, participants, ...rest } = chat;
+            return {
+                ...rest,
+                _id: _id.toString(),
+                lastMessage: lastMessage ? {
+                    ...lastMessage,
+                    _id: lastMessage._id.toString(),
+                    sender: lastMessage.sender ? lastMessage.sender.toString() : null, // or populate sender?
+                    readBy: lastMessage.readBy ? lastMessage.readBy.map(id => id.toString()) : []
+                } : null,
+                participants: participants.map(p => ({
+                    ...p,
+                    _id: p._id.toString()
+                }))
+            };
+        });
 
     } catch (error) {
         console.error("Error fetching conversations:", error);
@@ -236,12 +285,6 @@ export const getMessagesForConversation = async (conversationId, userId) => {
                 sender: { $ne: userId },
                 readBy: { $nin: [userId] }
             },
-            //             sender: { $ne: userId }: Filters out messages sent by the current user. 
-
-            // readBy: { $nin: [userId] }: Filters out messages that the user has already read. ($nin means "not in.")
-
-            // field1: { $ne: value1 }: This is the first condition. It selects documents where the value of field1 is not equal to value1.
-            // field2: { $nin: [valueA, valueB, valueC] }: This is the second condition. It selects documents where the value of field2 is not present in the provided array [valueA, valueB, valueC]. This also includes documents where field2 does not exist.
             {
                 $addToSet: { readBy: userId }
             }
@@ -250,12 +293,21 @@ export const getMessagesForConversation = async (conversationId, userId) => {
         // --- CRUD OPERATION: Retrieve Messages ---
         const messages = await Message.find({ conversationId: conversationId })
             .sort({ createdAt: 1 }) // Retrieve in chronological order
-            .populate('sender', 'name username profilePic') // Get sender details
+            .populate('sender', 'name username profilepic') // Get sender details
             .lean() // Returns plain JavaScript objects
             .exec();
 
         // Return the clean array for frontend processing
-        return messages;
+        return messages.map(msg => ({
+            ...msg,
+            _id: msg._id.toString(),
+            conversationId: msg.conversationId.toString(),
+            sender: msg.sender ? {
+                ...msg.sender,
+                _id: msg.sender._id.toString()
+            } : null,
+            readBy: msg.readBy ? msg.readBy.map(id => id.toString()) : []
+        }));
 
     } catch (error) {
         console.error("Error fetching message history:", error);
@@ -328,11 +380,22 @@ export const saveMessageAndGetDetails = async (senderId, recipientOrConversation
 
     // 5. Populate Sender Details for Real-Time Broadcast
     const populatedMessage = await Message.findById(newMessage._id)
-        .populate('sender', 'name username profilePic')
+        .populate('sender', 'name username profilepic')
         .lean();
 
     // Return the clean, populated message object
-    return populatedMessage;
+    if (!populatedMessage) return null;
+
+    return {
+        ...populatedMessage,
+        _id: populatedMessage._id.toString(),
+        conversationId: populatedMessage.conversationId.toString(),
+        sender: populatedMessage.sender ? {
+            ...populatedMessage.sender,
+            _id: populatedMessage.sender._id.toString()
+        } : null,
+        readBy: populatedMessage.readBy ? populatedMessage.readBy.map(id => id.toString()) : []
+    };
 };
 
 export const findOrCreateConversation = async (userId1, userId2) => {

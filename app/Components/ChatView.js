@@ -27,14 +27,15 @@ const ChatView = ({ activeChat, currentUserId, onBack }) => { // added onBack pr
     }, [messages, typingUser]);
 
 
+    // Derived Conversation ID for stability
+    const conversationId = activeChat?._id || activeChat?.id;
+
     // --- SOCKET AND DATA LIFECYCLE MANAGEMENT ---
     useEffect(() => {
-        if (!activeChat || !activeChat.id) {
+        if (!conversationId) {
             setMessages([]);
             return;
         }
-
-        const conversationId = activeChat.id;
 
         // A. Fetch Message History (HTTP Request)
         const fetchHistory = async () => {
@@ -51,7 +52,7 @@ const ChatView = ({ activeChat, currentUserId, onBack }) => { // added onBack pr
                         socket.emit('mark_messages_read', {
                             conversationId,
                             userId: currentUserId,
-                            senderId: 'partner_id_placeholder' // The server just needs the room ID mostly
+                            senderId: 'partner_id_placeholder'
                         });
 
                     } else {
@@ -78,15 +79,23 @@ const ChatView = ({ activeChat, currentUserId, onBack }) => { // added onBack pr
 
         // C. Define Handler Functions 
         const onReceiveMessage = (newMessage) => {
-            setMessages(prev => [...prev, newMessage]);
+            setMessages(prev => {
+                // Deduplication: Check if message ID already exists
+                if (prev.some(msg => msg._id === newMessage._id)) {
+                    return prev;
+                }
+                return [...prev, newMessage];
+            });
             setTypingUser(null); // Stop typing indicator if a message arrives
 
             // If the chat is open, immediately mark new incoming message as read
             if (newMessage.sender._id !== currentUserId) {
-                socket.emit('mark_messages_read', {
-                    conversationId: newMessage.conversationId,
-                    userId: currentUserId
-                });
+                if (newMessage.conversationId === conversationId) {
+                    socket.emit('mark_messages_read', {
+                        conversationId: conversationId,
+                        userId: currentUserId
+                    });
+                }
             }
         };
 
@@ -129,7 +138,7 @@ const ChatView = ({ activeChat, currentUserId, onBack }) => { // added onBack pr
             socket.off('messages_read', onMessagesRead);
         };
 
-    }, [activeChat, currentUserId]);
+    }, [conversationId, currentUserId]); // 🚨 CHANGED: Only re-run if conversationId changes, not entire activeChat object
 
 
     // --- TYPING AND SEND HANDLER ---
@@ -142,7 +151,8 @@ const ChatView = ({ activeChat, currentUserId, onBack }) => { // added onBack pr
 
         if (value.length > 0) {
             // Send 'start typing'
-            socket.emit('typing_status', { conversationId: activeChat.id, username: activeChat.name, isTyping: true });
+            const convId = activeChat._id || activeChat.id;
+            socket.emit('typing_status', { conversationId: convId, username: activeChat.name, isTyping: true });
 
             if (typingTimeoutRef.current) {
                 clearTimeout(typingTimeoutRef.current);
@@ -150,11 +160,13 @@ const ChatView = ({ activeChat, currentUserId, onBack }) => { // added onBack pr
 
             // Set 'stop typing' timeout
             typingTimeoutRef.current = setTimeout(() => {
-                socket.emit('typing_status', { conversationId: activeChat.id, username: activeChat.name, isTyping: false });
+                const convId = activeChat._id || activeChat.id;
+                socket.emit('typing_status', { conversationId: convId, username: activeChat.name, isTyping: false });
             }, 3000);
         } else {
             // Send 'stop typing' immediately when input is cleared
-            socket.emit('typing_status', { conversationId: activeChat.id, username: activeChat.name, isTyping: false });
+            const convId = activeChat._id || activeChat.id;
+            socket.emit('typing_status', { conversationId: convId, username: activeChat.name, isTyping: false });
         }
     };
 
@@ -165,7 +177,7 @@ const ChatView = ({ activeChat, currentUserId, onBack }) => { // added onBack pr
         const messagePayload = {
             senderId: currentUserId,
             // The activeChat.id is used as the recipient/conversation ID for the server action
-            recipientOrConversationId: activeChat.id,
+            recipientOrConversationId: activeChat._id || activeChat.id,
             content: inputContent,
         };
 
@@ -178,7 +190,21 @@ const ChatView = ({ activeChat, currentUserId, onBack }) => { // added onBack pr
 
 
     // --- JSX RENDER ---
-    const chatPartnerName = activeChat?.username || activeChat?.name || 'Loading...';
+    // 1. Identify the Other Participant
+    const otherParticipant = activeChat?.participants?.find(
+        p => String(p._id) !== String(currentUserId)
+    );
+
+    // 2. Derive Display Details
+    // If group, use activeChat.name. If 1-on-1, use partner's name. Fallback to 'Loading...'
+    const chatPartnerName = activeChat?.isGroup
+        ? activeChat.name
+        : (otherParticipant?.name || otherParticipant?.username || activeChat?.name || 'Loading...');
+
+    const chatPartnerPic = activeChat?.isGroup
+        ? '/default-group.png'
+        : (otherParticipant?.profilepic || activeChat?.profilepic || '/default-avatar.png');
+
     // Online status passed from wrapper
     const isOnline = activeChat?.isOnline;
 
@@ -207,7 +233,7 @@ const ChatView = ({ activeChat, currentUserId, onBack }) => { // added onBack pr
 
                     <div className="relative group cursor-pointer">
                         <img
-                            src={activeChat.profilePic || "/default-avatar.png"}
+                            src={chatPartnerPic}
                             alt={chatPartnerName}
                             className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm transition-transform group-hover:scale-105"
                         />
@@ -251,7 +277,7 @@ const ChatView = ({ activeChat, currentUserId, onBack }) => { // added onBack pr
                                 <div className={`w-8 mr-3 flex-shrink-0 ${showAvatar ? 'opacity-100' : 'opacity-0'}`}>
                                     {showAvatar && (
                                         <img
-                                            src={activeChat.profilePic || "/default-avatar.png"}
+                                            src={chatPartnerPic}
                                             className="w-9 h-9 rounded-full object-cover border border-white shadow-sm"
                                         />
                                     )}
