@@ -1,19 +1,19 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authoptions } from "@/app/api/auth/[...nextauth]/route";
-import { getUserIdByEmail,getMessagesForConversation } from "@/actions/useractions";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { getUserIdByEmail, getMessagesForConversation } from "@/actions/useractions";
 import connectDb from "@/app/db/connectDb";
 
 export async function GET(request, context) {
     await connectDb();
 
     // 1. 🔑 SECURE AUTHENTICATION: Get Session and Email
-    const session = await getServerSession(authoptions);
-    
+    const session = await getServerSession(authOptions);
+
     if (!session) {
         return NextResponse.json({ error: "Authentication required to view history." }, { status: 401 });
     }
-    
+
     const userEmail = session.user.email;
     const conversationId = context.params.conversationId;
 
@@ -22,7 +22,7 @@ export async function GET(request, context) {
     }
 
     // 2. Map Email to MongoDB User ID
-    const userId = await getUserIdByEmail(userEmail); 
+    const userId = await getUserIdByEmail(userEmail);
     if (!userId) {
         return NextResponse.json({ error: "User not found in database." }, { status: 404 });
     }
@@ -35,7 +35,7 @@ export async function GET(request, context) {
 
         // 4. Success Response
         return NextResponse.json(messages, { status: 200 });
-        
+
     } catch (error) {
         console.error("API Error fetching chat history:", error.message);
         // Ensure you don't leak internal error details

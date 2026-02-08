@@ -1,8 +1,10 @@
 // server.js
 
-const { createServer } = require('http');
-const { Server } = require('socket.io');
-const next = require('next');
+import { createServer } from 'http';
+import { Server } from 'socket.io';
+import next from 'next';
+import chatHandler from './socketHandlers/chat.js';
+
 // Configuration
 const dev = process.env.NODE_ENV !== 'production';
 const hostname = 'localhost';
@@ -18,7 +20,7 @@ app.prepare().then(() => {
 
     // 2. Attach Socket.IO to the HTTP Server
     const io = new Server(httpServer, {
-        path: '/api/socket', 
+        path: '/api/socket',
         cors: {
             origin: "http://localhost:3000", // Allows connection from your frontend
             methods: ["GET", "POST"]
@@ -26,15 +28,27 @@ app.prepare().then(() => {
     });
 
     // 3. Implement Socket Handlers
+    // Track online users: Map<UserId, SocketId>
+    const onlineUsers = new Map();
+
     io.on('connection', (socket) => {
         console.log(`Socket connected: ${socket.id}`);
-        
+
         // 🚨 IMPORTANT: Link to the chat handler file
-        // 🚨 IMPORTANT: Link to the chat handler file
-        require('./socketHandlers/chat').default(io, socket); 
+        chatHandler(io, socket, onlineUsers);
 
         socket.on('disconnect', () => {
             console.log(`Socket disconnected: ${socket.id}`);
+            // Find and remove user from online map
+            for (const [userId, socketId] of onlineUsers.entries()) {
+                if (socketId === socket.id) {
+                    onlineUsers.delete(userId);
+                    // Broadcast offline status to everyone
+                    io.emit('user_offline', userId);
+                    console.log(`User ${userId} went offline`);
+                    break;
+                }
+            }
         });
     });
 

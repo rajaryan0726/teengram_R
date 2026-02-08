@@ -1,15 +1,15 @@
-import mongoose,{mongo} from "mongoose";
+import mongoose, { mongo } from "mongoose";
 
-const connectDb = async()=>{
-    try{
-        const conn=await mongoose.connect(`mongodb://localhost:27017/teengram`,{
-        usenewUrlParser:true,
+const connectDb = async () => {
+    try {
+        const conn = await mongoose.connect(process.env.MONGODB_URI || `mongodb://localhost:27017/teengram`, {
+            useNewUrlParser: true,
         });
-        console.log("MongoDb connected",+conn.connection.host);
-        
+        console.log("MongoDb connected", +conn.connection.host);
+
     } catch (error) {
         console.log(error.message);
         process.exit(1);
     }
 }
- export default connectDb
+export default connectDb

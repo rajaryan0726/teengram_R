@@ -1,9 +1,11 @@
 {
   "name": "teengram_k",
   "version": "0.1.0",
+  "type": "module",
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:full": "node server.js",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
