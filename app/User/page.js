@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { sendPrompt } from '@/utils/sendPrompt'
 import { motion } from 'framer-motion'
+import { Image as ImageIcon, Video, X } from 'lucide-react'
 const page = () => {
   const router = useRouter()
   const { data: session } = useSession()
@@ -51,11 +52,40 @@ const page = () => {
   const handleChange = (e) => {
     setWritten_form({ ...Written_form, [e.target.name]: e.target.value })
   }
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Size Validation (3MB)
+    if (file.size > 3 * 1024 * 1024) {
+      alert("File size too large! Please upload under 3MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const type = file.type.startsWith('image/') ? 'image' : 'video';
+      setWritten_form({
+        ...Written_form,
+        mediaUrl: reader.result,
+        mediaType: type
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeMedia = () => {
+    setWritten_form({ ...Written_form, mediaUrl: '', mediaType: '' });
+  };
+
   const handleSubmit = async (e) => {
     console.log(Written_form.user_id, Written_form.caption);
-    let a = await upload_written_post(e, form._id, form.institute_name, form.university, form.profilepic, form.user_name)
+    // Pass Written_form.mediaUrl and mediaType directly
+    let a = await upload_written_post(e, form._id, form.institute_name, form.university, form.profilepic, form.user_name, Written_form.mediaUrl, Written_form.mediaType)
     if (a) {
       alert("post uploaded")
+      setWritten_form({}); // Clear form
     }
     setpost(false)
 
@@ -102,7 +132,7 @@ const page = () => {
   };
 
   return (
-    <div className="flex bg-gray-50 min-h-screen">
+    <div className="flex bg-gray-50 h-screen w-full overflow-hidden">
       <Sidebar className="flex-1" />
 
       <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
@@ -228,6 +258,8 @@ const page = () => {
 
                 <div className="flex flex-col md:flex-row gap-4">
                   <div className="flex-1 relative">
+                    <input type="hidden" name="mediaUrl" value={Written_form.mediaUrl || ""} />
+                    <input type="hidden" name="mediaType" value={Written_form.mediaType || ""} />
                     <input
                       value={Written_form.caption || ""}
                       onChange={handleChange}
@@ -243,11 +275,46 @@ const page = () => {
                       {isGenerating ? '🪄 Generating...' : '🪄 AI Caption'}
                     </button>
                   </div>
+                </div>
+
+                {/* Media Preview */}
+                {Written_form.mediaUrl && (
+                  <div className="relative mt-4 w-fit max-w-full">
+                    <button
+                      type="button"
+                      onClick={removeMedia}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full shadow-md hover:bg-red-600 z-10"
+                    >
+                      <X size={16} />
+                    </button>
+
+                    {Written_form.mediaType === 'image' ? (
+                      <img src={Written_form.mediaUrl} alt="Preview" className="h-40 w-auto rounded-lg border border-gray-200" />
+                    ) : (
+                      <video src={Written_form.mediaUrl} controls className="h-40 w-auto rounded-lg border border-gray-200" />
+                    )}
+                  </div>
+                )}
+
+                <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-100">
+                  <div className="flex gap-2">
+                    <label className="flex items-center gap-2 px-4 py-2 bg-gray-50 text-gray-600 rounded-xl cursor-pointer hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                      <ImageIcon size={20} />
+                      <span className="text-sm font-semibold">Photo/Video</span>
+                      <input
+                        type="file"
+                        accept="image/*,video/*"
+                        onChange={handleFileChange}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
 
                   <button type="submit" className="px-8 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-colors shadow-md">
                     Post It!
                   </button>
                 </div>
+
                 {captionError && <p className="text-red-500 text-sm mt-2">{captionError}</p>}
               </form>
             </motion.div>
@@ -283,9 +350,22 @@ const page = () => {
                           <p className="text-xs text-gray-500">{p.institute_name}</p>
                         </div>
                       </div>
-                      <p className="text-gray-800 leading-relaxed">{p.content}</p>
+                      <p className="text-gray-800 leading-relaxed mb-3">{p.content}</p>
+
+                      {/* Media Rendering */}
+                      {p.mediaType === 'image' && (
+                        <div className="rounded-xl overflow-hidden mb-3 border border-gray-100">
+                          <img src={p.mediaUrl} alt="Post media" className="w-full h-auto object-cover max-h-[500px]" />
+                        </div>
+                      )}
+                      {p.mediaType === 'video' && (
+                        <div className="rounded-xl overflow-hidden mb-3 border border-gray-100 bg-black">
+                          <video src={p.mediaUrl} controls className="w-full h-auto max-h-[500px]" />
+                        </div>
+                      )}
+
                       {p.caption && (
-                        <div className="mt-3 pl-4 border-l-4 border-indigo-200 italic text-indigo-600 text-sm">
+                        <div className="pl-4 border-l-4 border-indigo-200 italic text-indigo-600 text-sm">
                           {p.caption}
                         </div>
                       )}
@@ -340,9 +420,9 @@ const page = () => {
                             href={{ pathname: "/ViewFriends", query: { friend_email: user.sender_email, user_email: session.user.email } }}
                             className="block font-semibold text-gray-900 truncate hover:text-indigo-600"
                           >
-                            {user.sender_email.split('@')[0]}
+                            {user.sender_username || user.sender_email.split('@')[0]}
                           </Link>
-                          <p className="text-xs text-gray-500 truncate">@{user.sender_email}</p>
+                          {/* <p className="text-xs text-gray-500 truncate">@{user.sender_email}</p> */}
                         </div>
                       </motion.div>
                     ))}

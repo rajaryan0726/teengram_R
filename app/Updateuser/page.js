@@ -61,9 +61,9 @@ const page = () => {
   return (
     <div>
       <div className='flex justify-center items-center bg-slate-600'>
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <form action={handleSubmit}>
-            <div className="bg-white p-6 rounded-xl w-96 shadow-lg">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50 p-4">
+          <form action={handleSubmit} className="w-full max-w-md">
+            <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-h-[90vh] overflow-y-auto">
               <h2 className="text-lg font-semibold mb-4 text-gray-900">Edit Profile</h2>
 
               {/* Profile Pic Upload */}

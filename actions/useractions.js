@@ -140,9 +140,28 @@ export const checkuserrequeststatus = async (useremail, friendemail) => {
 export const fetchfriendrequest = async (useremail) => {
     await connectDb();
     console.log("fetching all the request pending for the user to make friends");
-    let u = await Friends.find({ reciever_email: useremail }).lean();
 
-    return u.map(req => serializeDoc(req));
+    // 1. Get pending requests
+    let u = await Friends.find({ reciever_email: useremail, request_accepted: { $ne: true } }).lean();
+
+    // 2. Extract sender emails
+    const emails = u.map(doc => doc.sender_email);
+
+    // 3. Fetch User details
+    const users = await User.find({ email: { $in: emails } })
+        .select('email username name profilepic')
+        .lean();
+
+    // 4. Map and enrich
+    return u.map(req => {
+        const userDetails = users.find(user => user.email === req.sender_email);
+        return {
+            ...serializeDoc(req),
+            sender_username: userDetails?.username || req.sender_email.split('@')[0],
+            sender_name: userDetails?.name,
+            sender_profilepic: userDetails?.profilepic || req.sender_profilepic
+        };
+    });
 }
 
 // NEW: Fetch requests SENT by the user
@@ -173,33 +192,75 @@ export const accept_request = async (id) => {
 export const fetchFollowingAction = async (useremail) => {
     await connectDb();
     console.log("finding the ones you follow (you sent request & accepted)", useremail);
-    // Logic: I am sender, request is accepted
+
+    // 1. Get the relationships
     let f = await Friends.find({
         sender_email: useremail,
         request_accepted: true,
     }).lean();
 
-    return f.map(doc => serializeDoc(doc));
+    // 2. Extract emails of the people I follow (receivers)
+    const emails = f.map(doc => doc.reciever_email);
+
+    // 3. Fetch User details for these emails
+    const users = await User.find({ email: { $in: emails } })
+        .select('email username name profilepic')
+        .lean();
+
+    // 4. Map back to the structure expected by frontend, enriching with username/name
+    return f.map(doc => {
+        const userDetails = users.find(u => u.email === doc.reciever_email);
+        return {
+            ...serializeDoc(doc),
+            sender_username: userDetails?.username || doc.reciever_email.split('@')[0], // Fallback
+            sender_name: userDetails?.name,
+            // We might want to use the latest profile pic from User collection instead of Friends snapshot
+            sender_profilepic: userDetails?.profilepic || doc.sender_profilepic
+        };
+    });
 }
 
 // NEW: Fetch "Followers" (People who sent requests to me AND I accepted)
 export const fetchFollowersAction = async (useremail) => {
     await connectDb();
     console.log("finding your followers (they sent request & accepted)", useremail);
-    // Logic: I am receiver, request is accepted
+
+    // 1. Get the relationships
     let f = await Friends.find({
         reciever_email: useremail,
         request_accepted: true,
     }).lean();
 
-    return f.map(doc => serializeDoc(doc));
+    // 2. Extract emails of my followers (senders)
+    const emails = f.map(doc => doc.sender_email);
+
+    // 3. Fetch User details
+    const users = await User.find({ email: { $in: emails } })
+        .select('email username name profilepic')
+        .lean();
+
+    return f.map(doc => {
+        const userDetails = users.find(u => u.email === doc.sender_email);
+        return {
+            ...serializeDoc(doc),
+            sender_username: userDetails?.username || doc.sender_email.split('@')[0],
+            sender_name: userDetails?.name,
+            sender_profilepic: userDetails?.profilepic || doc.sender_profilepic
+        };
+    });
 }
 
 //Upload wriiten_post
-export const upload_written_post = async (data, user_id, institute_name, university, profilepic, user_name) => {
+export const upload_written_post = async (data, user_id, institute_name, university, profilepic, user_name, mediaUrl, mediaType) => {
     await connectDb();
+    const fs = require('fs');
+    try {
+        fs.appendFileSync('server_debug.log', `${new Date().toISOString()} - Uploading post. UserID: ${user_id}, MediaType: ${mediaType}, MediaUrlLength: ${mediaUrl ? mediaUrl.length : 'null'}\n`);
+    } catch (e) { console.error("Log error", e); }
+
     let ndata = Object.fromEntries(data)
     console.log("uploading thought for user_id", user_id);
+    console.log("Media Data Types:", { mediaType, hasUrl: !!mediaUrl });
 
     const newpost = await Written_Post.create({
         user_id: user_id,
@@ -209,6 +270,8 @@ export const upload_written_post = async (data, user_id, institute_name, univers
         university_name: university,
         profilepic: profilepic,
         user_name: user_name,
+        mediaUrl: mediaUrl, // Use argument
+        mediaType: mediaType, // Use argument
     })
     if (newpost) {
         return true

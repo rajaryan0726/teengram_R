@@ -156,7 +156,7 @@ const SearchPage = () => {
     };
 
     return (
-        <div className="flex bg-gray-50 min-h-screen">
+        <div className="flex bg-gray-50 h-screen w-full overflow-hidden">
             <Sidebar className="flex-1" />
 
             <main className="flex-1 p-4 lg:p-8 overflow-y-auto w-full">
@@ -200,22 +200,24 @@ const SearchPage = () => {
                                     animate={{ opacity: 1, y: 0 }}
                                     className="bg-white rounded-2xl shadow-md p-6 flex flex-col items-center border border-gray-100 hover:shadow-xl transition-shadow"
                                 >
-                                    <div className="w-24 h-24 rounded-full p-1 bg-gradient-to-tr from-violet-500 to-pink-500 mb-4">
-                                        <img
-                                            src={user.profilepic || "https://via.placeholder.com/150"}
-                                            alt={user.name}
-                                            className="w-full h-full rounded-full object-cover border-2 border-white"
-                                        />
-                                    </div>
+                                    <Link href={{ pathname: '/ViewFriends', query: { friend_email: user.email, user_email: session.user.email } }} className="w-full flex flex-col items-center cursor-pointer">
+                                        <div className="w-24 h-24 rounded-full p-1 bg-gradient-to-tr from-violet-500 to-pink-500 mb-4 transition-transform hover:scale-105">
+                                            <img
+                                                src={user.profilepic || "https://via.placeholder.com/150"}
+                                                alt={user.name}
+                                                className="w-full h-full rounded-full object-cover border-2 border-white"
+                                            />
+                                        </div>
 
-                                    <h3 className="text-xl font-bold text-gray-900 text-center truncate w-full">{user.name}</h3>
-                                    <p className="text-violet-600 font-medium text-sm mb-4">@{user.username}</p>
+                                        <h3 className="text-xl font-bold text-gray-900 text-center truncate w-full hover:text-violet-600 transition-colors">{user.name}</h3>
+                                        <p className="text-violet-600 font-medium text-sm mb-4">@{user.username}</p>
 
-                                    {user.institute_name && (
-                                        <p className="text-gray-500 text-xs mb-4 text-center line-clamp-1">{user.institute_name}</p>
-                                    )}
+                                        {user.institute_name && (
+                                            <p className="text-gray-500 text-xs mb-4 text-center line-clamp-1">{user.institute_name}</p>
+                                        )}
+                                    </Link>
 
-                                    <div className="mt-auto">
+                                    <div className="mt-auto w-full flex justify-center" onClick={(e) => e.stopPropagation()}>
                                         {renderActionButton(user)}
                                     </div>
                                 </motion.div>
