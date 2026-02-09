@@ -118,4 +118,34 @@ export default (io, socket, onlineUsers) => {
             console.log(`User ${disconnectedUserId} went offline`);
         }
     });
+
+    // --- NEW: Social Features (Likes/Comments) ---
+    socket.on('post_reaction', (data) => {
+        // data = { postId, type, action, userId, ... }
+        // Broadcast to everyone to update UI (Like counts, comments)
+        io.emit('post_updated', data);
+
+        // Send push notification to the pc-owner if they are online
+        if (data.recipientId && onlineUsers.has(data.recipientId)) {
+            const recipientSocketId = onlineUsers.get(data.recipientId);
+            // Construct a notification object slightly different from DB schema if needed by frontend
+            // Or just pass enough info for the toast
+            const notificationPayload = {
+                type: data.type,
+                sender_username: data.sender_username, // We might need to pass this from client or fetch it
+                text: data.type === 'like' ? 'liked your post' : 'commented on your post',
+                createdAt: new Date(),
+            };
+            io.to(recipientSocketId).emit('new_notification', notificationPayload);
+        }
+    });
+
+    socket.on('send_notification', (data) => {
+        // data = { recipientId, notification }
+        const recipientSocketId = onlineUsers.get(data.recipientId);
+        if (recipientSocketId) {
+            io.to(recipientSocketId).emit('new_notification', data.notification);
+        }
+    });
+
 };

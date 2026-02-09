@@ -9,13 +9,10 @@ import Message from '../models/Message.js'
 import Written_Post from '../models/Written_Post.js'
 
 // Helper to serialize Mongoose documents
+// Helper to serialize Mongoose documents (deeply)
 const serializeDoc = (doc) => {
     if (!doc) return null;
-    const { _id, ...rest } = doc;
-    return {
-        ...rest,
-        _id: _id.toString(),
-    };
+    return JSON.parse(JSON.stringify(doc));
 };
 
 export const getUserIdByEmail = async (email) => {
@@ -483,4 +480,100 @@ export const findOrCreateConversation = async (userId1, userId2) => {
     });
 
     return newConversation._id.toString();
+};
+
+// --- SOCIAL FEATURES (Likes, Comments, Notifications) ---
+import Notification from '../models/Notification.js';
+
+export const toggleLikePost = async (postId, userId, userEmail, userName, userPic) => {
+    await connectDb();
+    const post = await Written_Post.findById(postId);
+    if (!post) return { success: false, message: "Post not found" };
+
+    const isLiked = post.likes.includes(userId);
+    let action = '';
+
+    if (isLiked) {
+        // Unlike
+        post.likes = post.likes.filter(id => id !== userId);
+        action = 'unliked';
+    } else {
+        // Like
+        post.likes.push(userId);
+        action = 'liked';
+
+        // Create Notification (if not liking own post)
+        if (post.user_id !== userId) {
+            // Find post owner's email (assuming we might need to fetch user if not stored in post)
+            // But wait, Written_Post stores user_id. We need the email for Notification schema I designed.
+            // Let's fetch the post owner details.
+            const postOwner = await User.findById(post.user_id).lean();
+            if (postOwner) {
+                await Notification.create({
+                    recipient_email: postOwner.email,
+                    sender_email: userEmail,
+                    sender_username: userName,
+                    sender_profilepic: userPic,
+                    type: 'like',
+                    postId: postId,
+                    text: `${userName} liked your post.`,
+                });
+            }
+        }
+    }
+
+    await post.save();
+    // Return updated likes array
+    return { success: true, action, likes: post.likes };
+};
+
+export const addComment = async (postId, userId, userEmail, userName, userPic, text) => {
+    await connectDb();
+    const post = await Written_Post.findById(postId);
+    if (!post) return { success: false, message: "Post not found" };
+
+    const newComment = {
+        user_id: userId,
+        user_name: userName,
+        profilepic: userPic,
+        text: text,
+        createdAt: new Date()
+    };
+
+    post.comments.push(newComment);
+    await post.save();
+
+    // Create Notification
+    if (post.user_id !== userId) {
+        const postOwner = await User.findById(post.user_id).lean();
+        if (postOwner) {
+            await Notification.create({
+                recipient_email: postOwner.email,
+                sender_email: userEmail,
+                sender_username: userName,
+                sender_profilepic: userPic,
+                type: 'comment',
+                postId: postId,
+                text: `${userName} commented: "${text.substring(0, 20)}${text.length > 20 ? '...' : ''}"`,
+            });
+        }
+    }
+
+    // Return the newly created comment (last one in array)
+    // We need to re-fetch or just return the obj we pushed + serialize
+    const savedPost = await Written_Post.findById(postId).lean();
+    const addedComment = savedPost.comments[savedPost.comments.length - 1];
+
+    return { success: true, comment: { ...addedComment, _id: addedComment._id.toString() } };
+};
+
+
+export const fetchNotifications = async (userEmail) => {
+    await connectDb();
+    // Get real notifications
+    const realNotifs = await Notification.find({ recipient_email: userEmail })
+        .sort({ createdAt: -1 })
+        .lean();
+
+    return realNotifs.map(doc => serializeDoc(doc));
 };

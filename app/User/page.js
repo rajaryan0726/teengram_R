@@ -3,12 +3,14 @@ import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import Sidebar from '../Components/Sidebar'
-import { fetchuser, fetchFollowingAction, fetchFollowersAction, upload_written_post, fetchpost } from '@/actions/useractions'
+import { fetchuser, fetchFollowingAction, fetchFollowersAction, upload_written_post, fetchpost, toggleLikePost, addComment } from '@/actions/useractions'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { sendPrompt } from '@/utils/sendPrompt'
-import { motion } from 'framer-motion'
-import { Image as ImageIcon, Video, X } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Image as ImageIcon, Video, X, Heart, MessageCircle, Send } from 'lucide-react'
+import { io } from 'socket.io-client'
+
 const page = () => {
   const router = useRouter()
   const { data: session } = useSession()
@@ -19,14 +21,54 @@ const page = () => {
 
   const [post, setpost] = useState(false)
   const [seefollower, setseefollower] = useState(true);
+  const [socket, setSocket] = useState(null)
 
   const [Written_form, setWritten_form] = useState({})//to store the content for a written post
+
+  // Comment State: { [postId]: "comment text" }
+  const [commentInputs, setCommentInputs] = useState({});
+  const [activeCommentBox, setActiveCommentBox] = useState(null); // Post ID where comment box is open
+
   useEffect(() => {
     if (!session) {
       router.push("/login")
     }
     else {
       getdata()
+
+      // Initialize Socket
+      const newSocket = io('http://localhost:3000', {
+        path: '/api/socket',
+        addTrailingSlash: false,
+      });
+      setSocket(newSocket);
+
+      newSocket.on('connect', () => {
+        console.log('Connected to socket', newSocket.id);
+        // Register user? Usually done via chat logic checking email, 
+        // but for public posts we just need to listen.
+      });
+
+      newSocket.on('post_updated', (data) => {
+        console.log("Post updated:", data);
+        // Update local state if the post is in our list
+        setwritten_post(prevPosts => prevPosts.map(p => {
+          if (p._id === data.postId) {
+            if (data.type === 'like') {
+              return { ...p, likes: data.likes };
+            }
+            if (data.type === 'comment') {
+              // Add new comment to array
+              return { ...p, comments: [...(p.comments || []), data.comment] };
+            }
+          }
+          return p;
+        }));
+      });
+
+      return () => {
+        newSocket.disconnect();
+      }
     }
   }, [session])
 
@@ -86,6 +128,9 @@ const page = () => {
     if (a) {
       alert("post uploaded")
       setWritten_form({}); // Clear form
+      // Refresh posts
+      let written = await fetchpost(form._id);
+      setwritten_post(written);
     }
     setpost(false)
 
@@ -130,6 +175,45 @@ const page = () => {
       setIsGenerating(false);
     }
   };
+
+  // --- SOCIAL ACTIONS ---
+  const onLike = async (postId) => {
+    // Optimistic Update
+    setwritten_post(prev => prev.map(p => {
+      if (p._id === postId) {
+        const userId = form._id;
+        const isLiked = p.likes?.includes(userId);
+        return {
+          ...p,
+          likes: isLiked ? p.likes.filter(id => id !== userId) : [...(p.likes || []), userId]
+        };
+      }
+      return p;
+    }));
+
+    const res = await toggleLikePost(postId, form._id, form.email, form.name, form.profilepic);
+    if (res.success) {
+      // Emit socket event to notify others
+      socket.emit('post_reaction', { postId, type: 'like', likes: res.likes, recipientEmail: null }); // recipientEmail handled by server for notif
+    }
+  };
+
+  const onComment = async (postId) => {
+    const text = commentInputs[postId];
+    if (!text || !text.trim()) return;
+
+    const res = await addComment(postId, form._id, form.email, form.name, form.profilepic, text);
+    if (res.success) {
+      setCommentInputs({ ...commentInputs, [postId]: '' });
+      // Emit socket event
+      socket.emit('post_reaction', { postId, type: 'comment', comment: res.comment, recipientEmail: null });
+
+      // Local update (if socket doesn't bounce back fast enough, though socket handler emits to all)
+      // Ideally rely on socket, but for own UI responsiveness:
+      // setwritten_post(prev => ...) -> Actually socket is fast enough usually.
+    }
+  };
+
 
   return (
     <div className="flex bg-gray-50 h-screen w-full overflow-hidden">
@@ -365,10 +449,84 @@ const page = () => {
                       )}
 
                       {p.caption && (
-                        <div className="pl-4 border-l-4 border-indigo-200 italic text-indigo-600 text-sm">
+                        <div className="pl-4 border-l-4 border-indigo-200 italic text-indigo-600 text-sm mb-3">
                           {p.caption}
                         </div>
                       )}
+
+                      {/* --- SOCIAL BUTTONS --- */}
+                      <div className="flex items-center gap-4 mt-4 pt-3 border-t border-gray-200">
+                        {/* Like Button */}
+                        <button
+                          onClick={() => onLike(p._id)}
+                          className="flex items-center gap-1.5 text-gray-500 hover:text-pink-500 transition-colors"
+                        >
+                          <Heart
+                            size={20}
+                            fill={p.likes?.includes(form._id) ? "currentColor" : "none"}
+                            className={p.likes?.includes(form._id) ? "text-pink-500" : ""}
+                          />
+                          <span className="font-semibold text-sm">{p.likes?.length || 0}</span>
+                        </button>
+
+                        {/* Comment Button */}
+                        <button
+                          onClick={() => setActiveCommentBox(activeCommentBox === p._id ? null : p._id)}
+                          className="flex items-center gap-1.5 text-gray-500 hover:text-blue-500 transition-colors"
+                        >
+                          <MessageCircle size={20} />
+                          <span className="font-semibold text-sm">{p.comments?.length || 0}</span>
+                        </button>
+                      </div>
+
+                      {/* --- COMMENTS SECTION --- */}
+                      <AnimatePresence>
+                        {activeCommentBox === p._id && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="mt-3 overflow-hidden"
+                          >
+                            {/* Comments List */}
+                            <div className="space-y-3 mb-3 max-h-40 overflow-y-auto pr-1 custom-scrollbar">
+                              {p.comments?.map((c, idx) => (
+                                <div key={idx} className="bg-white p-2 rounded-lg border border-gray-100 shadow-sm text-sm">
+                                  <div className="flex items-start gap-2">
+                                    <img src={c.profilepic} className="w-6 h-6 rounded-full" alt="pic" />
+                                    <div>
+                                      <span className="font-bold text-gray-800 mr-2">{c.user_name}</span>
+                                      <span className="text-gray-600">{c.text}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                              {(!p.comments || p.comments.length === 0) && (
+                                <p className="text-gray-400 text-xs text-center">No comments yet. Be the first!</p>
+                              )}
+                            </div>
+
+                            {/* Comment Input */}
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                placeholder="Write a comment..."
+                                className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-indigo-400 placeholder-gray-500"
+                                value={commentInputs[p._id] || ''}
+                                onChange={(e) => setCommentInputs({ ...commentInputs, [p._id]: e.target.value })}
+                                onKeyDown={(e) => e.key === 'Enter' && onComment(p._id)}
+                              />
+                              <button
+                                onClick={() => onComment(p._id)}
+                                className="p-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors"
+                              >
+                                <Send size={16} />
+                              </button>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+
                     </motion.div>
                   ))}
                 </div>
