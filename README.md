@@ -51,3 +51,4 @@ did changes with the json
               {seefollower ? <div className='w-1/2'>Your foollower heheheheh</div> : <div className='w-1/2'>Your following will be here and when click on followe you will see follower</div>}
 
             </div>
+            <!-- managing the multiple github accounts -->
