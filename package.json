@@ -11,15 +11,19 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
     "framer-motion": "^12.23.24",
     "lucide-react": "^0.544.0",
-    "mongoose": "^8.19.0",
+    "mongoose": "^8.23.0",
     "next": "^15.5.4",
     "next-auth": "^4.24.11",
     "openai": "^6.7.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "socket.io": "^4.8.1",
+    "redis": "^5.11.0",
+    "socket.io": "^4.8.3",
     "socket.io-client": "^4.8.1"
   },
   "devDependencies": {
@@ -28,5 +32,21 @@
     "eslint": "^9",
     "eslint-config-next": "15.5.4",
     "tailwindcss": "^4"
-  }
+  },
+  "description": "<<<<<<< HEAD\r This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).",
+  "main": "check_posts.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/krishnadoes/teengram.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/krishnadoes/teengram/issues"
+  },
+  "homepage": "https://github.com/krishnadoes/teengram#readme"
 }
