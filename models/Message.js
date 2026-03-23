@@ -22,6 +22,13 @@ const MessageSchema = new Schema({
         // Tracks read receipts for all participants
       },
     ],
+    // Two-Way Deletion Tracker
+    deletedBy: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "User"
+      }
+    ],
   },
   {
     timestamps: true, // Stores the message sending time (createdAt)

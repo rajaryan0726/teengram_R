@@ -66,6 +66,16 @@ const ViewFriendsPage = () => {
             if (data.type === 'comment') {
               return { ...p, comments: [...(p.comments || []), data.comment] };
             }
+            if (data.type === 'reply') {
+              return {
+                ...p,
+                comments: p.comments.map(c =>
+                  c._id === data.commentId
+                    ? { ...c, replies: [...(c.replies || []), data.reply] }
+                    : c
+                )
+              };
+            }
           }
           return p;
         }));
@@ -412,9 +422,29 @@ const ViewFriendsPage = () => {
                               <div key={idx} className="bg-white p-2 rounded-lg border border-gray-100 shadow-sm text-sm">
                                 <div className="flex items-start gap-2">
                                   <img src={c.profilepic} className="w-6 h-6 rounded-full" alt="pic" />
-                                  <div>
-                                    <span className="font-bold text-gray-800 mr-2">{c.user_name}</span>
-                                    <span className="text-gray-600">{c.text}</span>
+                                  <div className="flex-1">
+                                    <div className="flex justify-between items-start">
+                                      <div>
+                                        <span className="font-bold text-gray-800 mr-2">{c.user_name}</span>
+                                        <span className="text-gray-600">{c.text}</span>
+                                      </div>
+                                    </div>
+                                    
+                                    {/* Replies List */}
+                                    {c.replies?.length > 0 && (
+                                      <div className="mt-2 pl-3 border-l-2 border-indigo-100 space-y-2">
+                                        {c.replies.map((r, rIdx) => (
+                                          <div key={rIdx} className="flex items-start gap-2 text-xs">
+                                            <img src={r.profilepic} className="w-4 h-4 rounded-full mt-0.5" alt="pic" />
+                                            <div>
+                                              <span className="font-bold text-indigo-800 mr-1">{r.user_name}</span>
+                                              <span className="bg-indigo-100 text-indigo-800 text-[9px] px-1 rounded mr-2 font-bold tracking-wide">AUTHOR</span>
+                                              <span className="text-gray-600">{r.text}</span>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
                               </div>

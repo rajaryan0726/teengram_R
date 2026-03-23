@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { socket } from "@/lib/socket"; // Import the socket client
-import { ArrowLeft, Send, Phone, Video, MoreVertical, Check, CheckCheck } from "lucide-react";
+import { ArrowLeft, Send, Phone, Video, MoreVertical, Check, CheckCheck, Trash2, X } from "lucide-react";
+import { deleteMessagesAction } from "@/actions/useractions";
 
 // Helper to determine if the message was sent by the current user
 const isMessageFromMe = (message, currentUserId) => {
@@ -11,11 +12,35 @@ const isMessageFromMe = (message, currentUserId) => {
     return senderId === currentUserId;
 };
 
-const ChatView = ({ activeChat, currentUserId, onBack }) => { // added onBack prop just in case it's passed
+// Helper to format date labels
+const formatMessageDate = (dateString) => {
+    const date = new Date(dateString);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    if (date.toDateString() === today.toDateString()) {
+        return 'Today';
+    } else if (date.toDateString() === yesterday.toDateString()) {
+        return 'Yesterday';
+    } else {
+        return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+};
+
+const ChatView = ({ activeChat, currentUserId, onBack, onStartCall }) => {
     const [messages, setMessages] = useState([]);
     const [inputContent, setInputContent] = useState('');
     const [typingUser, setTypingUser] = useState(null);
     const [chatError, setChatError] = useState(null);
+
+    // Feature: Select and Delete
+    const [isSelectMode, setIsSelectMode] = useState(false);
+    const [selectedMessages, setSelectedMessages] = useState(new Set());
+    const [isDeleting, setIsDeleting] = useState(false);
+    
+    // Feature: Two-Way Deletion Modal
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
 
     // Ref for auto-scrolling and typing timeout
     const messagesEndRef = useRef(null);
@@ -99,6 +124,10 @@ const ChatView = ({ activeChat, currentUserId, onBack }) => { // added onBack pr
             }
         };
 
+        const onMessagesDeleted = ({ messageIds }) => {
+            setMessages(prev => prev.filter(msg => !messageIds.includes(msg._id)));
+        };
+
         const onTyping = ({ username, isTyping }) => {
             setTypingUser(isTyping ? username : null);
         };
@@ -129,6 +158,7 @@ const ChatView = ({ activeChat, currentUserId, onBack }) => { // added onBack pr
         socket.on('typing', onTyping);
         socket.on('chat_error', onChatError);
         socket.on('messages_read', onMessagesRead);
+        socket.on('messages_deleted', onMessagesDeleted);
 
         // E. Cleanup function
         return () => {
@@ -136,6 +166,7 @@ const ChatView = ({ activeChat, currentUserId, onBack }) => { // added onBack pr
             socket.off('typing', onTyping);
             socket.off('chat_error', onChatError);
             socket.off('messages_read', onMessagesRead);
+            socket.off('messages_deleted', onMessagesDeleted);
         };
 
     }, [conversationId, currentUserId]); // 🚨 CHANGED: Only re-run if conversationId changes, not entire activeChat object
@@ -188,6 +219,37 @@ const ChatView = ({ activeChat, currentUserId, onBack }) => { // added onBack pr
         setInputContent('');
     };
 
+    // --- DELETION HANDLER ---
+    const toggleMessageSelection = (messageId) => {
+        if (!isSelectMode) return;
+        const newSet = new Set(selectedMessages);
+        if (newSet.has(messageId)) newSet.delete(messageId);
+        else newSet.add(messageId);
+        setSelectedMessages(newSet);
+    };
+
+    const handleDeleteSelected = async (deleteForEveryone) => {
+        if (selectedMessages.size === 0) return;
+        setIsDeleting(true);
+        setShowDeleteModal(false);
+        try {
+            const messageIds = Array.from(selectedMessages);
+            const res = await deleteMessagesAction(conversationId, messageIds, currentUserId, deleteForEveryone);
+            if (res.success) {
+                setMessages(prev => prev.filter(m => !selectedMessages.has(m._id)));
+                if (deleteForEveryone) {
+                    socket.emit('delete_messages', { conversationId, messageIds });
+                }
+            }
+        } catch (e) {
+            setChatError("Failed to delete messages.");
+        } finally {
+            setIsDeleting(false);
+            setIsSelectMode(false);
+            setSelectedMessages(new Set());
+        }
+    };
+
 
     // --- JSX RENDER ---
     // 1. Identify the Other Participant
@@ -225,9 +287,9 @@ const ChatView = ({ activeChat, currentUserId, onBack }) => { // added onBack pr
     }
 
     return (
-        <div className="flex flex-col flex-1 bg-white relative">
+        <div className="flex flex-col flex-1 bg-white dark:bg-black relative transition-colors duration-300">
             {/* Header: Chat Partner Details */}
-            <div className="px-6 py-4 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center justify-between sticky top-0 z-10 shadow-sm transition-all">
+            <div className="px-6 py-4 bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-gray-100 dark:border-neutral-800 flex items-center justify-between sticky top-0 z-10 shadow-sm transition-colors duration-300">
                 <div className="flex items-center gap-4">
                     {/* Back Button for mobile (if needed later) */}
 
@@ -235,17 +297,17 @@ const ChatView = ({ activeChat, currentUserId, onBack }) => { // added onBack pr
                         <img
                             src={chatPartnerPic}
                             alt={chatPartnerName}
-                            className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm transition-transform group-hover:scale-105"
+                            className="w-12 h-12 rounded-full object-cover border-2 border-white dark:border-neutral-800 shadow-sm transition-transform group-hover:scale-105"
                         />
                         {isOnline ? (
-                            <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full shadow-sm animate-pulse"></span>
+                            <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white dark:border-neutral-800 rounded-full shadow-sm animate-pulse"></span>
                         ) : (
-                            <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-gray-400 border-2 border-white rounded-full shadow-sm"></span>
+                            <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-gray-400 border-2 border-white dark:border-neutral-800 rounded-full shadow-sm"></span>
                         )}
                     </div>
 
                     <div>
-                        <h2 className="text-xl font-bold text-gray-900 leading-tight">{chatPartnerName}</h2>
+                        <h2 className="text-xl font-bold text-gray-900 dark:text-white leading-tight">{chatPartnerName}</h2>
                         <p className={`text-sm font-medium transition-all ${typingUser ? 'text-violet-600' : isOnline ? 'text-green-600' : 'text-gray-400'}`}>
                             {typingUser ? "typing..." : isOnline ? "Active now" : "Offline"}
                         </p>
@@ -253,14 +315,21 @@ const ChatView = ({ activeChat, currentUserId, onBack }) => { // added onBack pr
                 </div>
 
                 <div className="flex gap-2 text-gray-400">
-                    <button className="p-3 hover:bg-violet-50 hover:text-violet-600 rounded-xl transition-all"><Phone className="w-5 h-5" /></button>
-                    <button className="p-3 hover:bg-violet-50 hover:text-violet-600 rounded-xl transition-all"><Video className="w-5 h-5" /></button>
+                    <button 
+                        onClick={() => { setIsSelectMode(!isSelectMode); setSelectedMessages(new Set()); }}
+                        title="Select messages to delete"
+                        className={`p-3 rounded-xl transition-all ${isSelectMode ? 'bg-violet-100 text-violet-600' : 'hover:bg-violet-50 hover:text-violet-600'}`}
+                    >
+                        {isSelectMode ? <X className="w-5 h-5" /> : <CheckCheck className="w-5 h-5" />}
+                    </button>
+                    <button onClick={() => isOnline ? onStartCall(false) : alert("User is offline")} className="p-3 hover:bg-violet-50 hover:text-violet-600 rounded-xl transition-all"><Phone className="w-5 h-5" /></button>
+                    <button onClick={() => isOnline ? onStartCall(true) : alert("User is offline")} className="p-3 hover:bg-violet-50 hover:text-violet-600 rounded-xl transition-all"><Video className="w-5 h-5" /></button>
                     <button className="p-3 hover:bg-violet-50 hover:text-violet-600 rounded-xl transition-all"><MoreVertical className="w-5 h-5" /></button>
                 </div>
             </div>
 
             {/* Message Area */}
-            <div className="flex-1 p-6 overflow-y-auto space-y-6 custom-scrollbar bg-slate-50/50">
+            <div className="flex-1 p-6 overflow-y-auto space-y-6 custom-scrollbar bg-slate-50/50 dark:bg-[#0a0a0a]/50 transition-colors duration-300">
                 {messages.map((message, index) => {
                     // Check if the message belongs to the current user
                     const isMe = isMessageFromMe(message, currentUserId);
@@ -268,11 +337,27 @@ const ChatView = ({ activeChat, currentUserId, onBack }) => { // added onBack pr
                     const isRead = message.readBy && message.readBy.length > 1; // Sender is always in readBy
                     const showAvatar = !isMe && (index === 0 || messages[index - 1]?.senderId !== message.senderId);
 
+                    // Date Separator Logic
+                    const currentDateString = new Date(message.createdAt).toDateString();
+                    const previousDateString = index > 0 ? new Date(messages[index - 1].createdAt).toDateString() : null;
+                    const showDateSeparator = currentDateString !== previousDateString;
+
+                    // 5-hour Deletion Limit
+                    const messageAgeMs = Date.now() - new Date(message.createdAt).getTime();
+                    const isDeletable = messageAgeMs <= 5 * 60 * 60 * 1000;
+
                     return (
-                        <div
-                            key={message._id || index}
-                            className={`flex ${isMe ? 'justify-end' : 'justify-start'} group mb-1`}
-                        >
+                        <React.Fragment key={message._id || index}>
+                            {showDateSeparator && (
+                                <div className="w-full flex justify-center my-6">
+                                    <span className="text-[11px] font-bold text-gray-400 bg-gray-200/50 px-3 py-1 rounded-full uppercase tracking-wider backdrop-blur-sm shadow-sm border border-gray-100">
+                                        {formatMessageDate(message.createdAt)}
+                                    </span>
+                                </div>
+                            )}
+                            <div
+                                className={`flex ${isMe ? 'justify-end' : 'justify-start'} group mb-1`}
+                            >
                             {!isMe && (
                                 <div className={`w-8 mr-3 flex-shrink-0 ${showAvatar ? 'opacity-100' : 'opacity-0'}`}>
                                     {showAvatar && (
@@ -283,12 +368,21 @@ const ChatView = ({ activeChat, currentUserId, onBack }) => { // added onBack pr
                                     )}
                                 </div>
                             )}
-
                             <div
-                                className={`max-w-[75%] lg:max-w-[65%] px-5 py-3 rounded-2xl shadow-sm text-[15px] leading-relaxed relative transition-shadow
+                                onClick={() => {
+                                    if (!isSelectMode) return;
+                                    if (isDeletable) toggleMessageSelection(message._id);
+                                    else {
+                                        setChatError("Cannot delete messages older than 5 hours.");
+                                        setTimeout(() => setChatError(null), 3000);
+                                    }
+                                }}
+                                className={`max-w-[75%] lg:max-w-[65%] px-5 py-3 rounded-2xl shadow-sm text-[15px] leading-relaxed relative transition-all ${isSelectMode && isDeletable ? 'cursor-pointer hover:scale-[1.02]' : ''}
+                                    ${isSelectMode && !isDeletable ? 'opacity-60 cursor-not-allowed grayscale' : ''}
+                                    ${isSelectMode && selectedMessages.has(message._id) ? 'ring-4 ring-red-400 opacity-90 scale-95' : ''}
                                     ${isMe
-                                        ? 'bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white rounded-br-sm shadow-violet-200'
-                                        : 'bg-white text-gray-800 rounded-bl-sm border border-gray-100 hover:shadow-md'
+                                        ? 'bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white rounded-br-sm shadow-violet-200 dark:shadow-none'
+                                        : 'bg-white dark:bg-neutral-900 text-gray-800 dark:text-gray-100 rounded-bl-sm border border-gray-100 dark:border-neutral-800 hover:shadow-md dark:shadow-none'
                                     }
                                 `}
                             >
@@ -309,13 +403,14 @@ const ChatView = ({ activeChat, currentUserId, onBack }) => { // added onBack pr
                                 </div>
                             </div>
                         </div>
+                        </React.Fragment>
                     );
                 })}
                 <div ref={messagesEndRef} />
             </div>
 
-            {/* Input Footer */}
-            <div className="p-4 bg-white border-t border-gray-100 sticky bottom-0 z-10">
+            {/* Input Footer OR Selection Footer */}
+            <div className="p-4 bg-white dark:bg-black border-t border-gray-100 dark:border-neutral-800 sticky bottom-0 z-10 transition-colors duration-300">
                 {/* 🚨 ERROR DISPLAY 🚨 */}
                 {chatError && (
                     <div className="text-red-600 text-sm mb-2 p-3 bg-red-50 border border-red-100 rounded-xl flex items-center gap-2">
@@ -323,35 +418,106 @@ const ChatView = ({ activeChat, currentUserId, onBack }) => { // added onBack pr
                     </div>
                 )}
 
-                <div className="flex gap-3 items-end max-w-5xl mx-auto">
-                    <button className="p-3 text-gray-400 hover:text-violet-500 hover:bg-violet-50 rounded-full transition-all">
-                        <span className="text-2xl">📎</span>
-                    </button>
-
-                    <div className="flex-1 bg-gray-50 rounded-3xl border border-gray-200 focus-within:ring-2 focus-within:ring-violet-500/20 focus-within:border-violet-500 transition-all flex items-center px-4 py-1 shadow-inner">
-                        <input
-                            type="text"
-                            placeholder="Type a message..."
-                            value={inputContent}
-                            onChange={handleTyping}
-                            onKeyPress={(e) => { if (e.key === 'Enter') handleSend(); }}
-                            className="flex-1 bg-transparent py-3 focus:outline-none text-gray-800 placeholder-gray-400 font-medium"
-                        />
+                {isSelectMode ? (
+                    <div className="flex items-center justify-between max-w-5xl mx-auto py-2">
+                        <span className="text-gray-600 dark:text-gray-300 font-medium">
+                            {selectedMessages.size} selected
+                        </span>
+                        <div className="flex gap-4">
+                            <button
+                                onClick={() => { setIsSelectMode(false); setSelectedMessages(new Set()); }}
+                                className="px-5 py-2.5 rounded-xl font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-neutral-800 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => setShowDeleteModal(true)}
+                                disabled={selectedMessages.size === 0 || isDeleting}
+                                className={`px-5 py-2.5 rounded-xl font-bold text-white flex items-center gap-2 shadow-lg transition-all
+                                    ${selectedMessages.size === 0 
+                                        ? 'bg-red-300 shadow-none cursor-default' 
+                                        : 'bg-gradient-to-r from-red-500 to-rose-600 hover:shadow-red-200 hover:scale-105 active:scale-95'
+                                    }`}
+                            >
+                                <Trash2 className="w-5 h-5" />
+                                {isDeleting ? 'Deleting...' : 'Delete'}
+                            </button>
+                        </div>
                     </div>
+                ) : (
+                    <div className="flex gap-3 items-end max-w-5xl mx-auto">
+                        <button className="p-3 text-gray-400 hover:text-violet-500 hover:bg-violet-50 dark:hover:bg-neutral-800 rounded-full transition-all">
+                            <span className="text-2xl">📎</span>
+                        </button>
 
-                    <button
-                        onClick={handleSend}
-                        disabled={!inputContent.trim()}
-                        className={`p-3.5 rounded-full shadow-lg transition-all duration-200 flex items-center justify-center
-                            ${!inputContent.trim()
-                                ? 'bg-gray-200 text-gray-400 shadow-none cursor-default'
-                                : 'bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white shadow-violet-200 hover:shadow-violet-400 hover:scale-105 active:scale-95'
-                            }`}
-                    >
-                        <Send className="w-5 h-5 ml-0.5" />
-                    </button>
-                </div>
+                        <div className="flex-1 bg-gray-50 dark:bg-neutral-900 rounded-3xl border border-gray-200 dark:border-neutral-800 focus-within:ring-2 focus-within:ring-violet-500/20 focus-within:border-violet-500 transition-all flex items-center px-4 py-1 shadow-inner dark:shadow-none">
+                            <input
+                                type="text"
+                                placeholder="Type a message..."
+                                value={inputContent}
+                                onChange={handleTyping}
+                                onKeyPress={(e) => { if (e.key === 'Enter') handleSend(); }}
+                                className="flex-1 bg-transparent py-3 focus:outline-none text-gray-800 dark:text-white placeholder-gray-400 font-medium"
+                            />
+                        </div>
+
+                        <button
+                            onClick={handleSend}
+                            disabled={!inputContent.trim()}
+                            className={`p-3.5 rounded-full shadow-lg transition-all duration-200 flex items-center justify-center
+                                ${!inputContent.trim()
+                                    ? 'bg-gray-200 text-gray-400 shadow-none cursor-default'
+                                    : 'bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white shadow-violet-200 hover:shadow-violet-400 hover:scale-105 active:scale-95'
+                                }`}
+                        >
+                            <Send className="w-5 h-5 ml-0.5" />
+                        </button>
+                    </div>
+                )}
             </div>
+
+            {/* TWO-WAY DELETE MODAL */}
+            {showDeleteModal && (
+                <div className="fixed inset-0 z-[120] bg-black/60 backdrop-blur-sm flex items-center justify-center">
+                    <div className="bg-white dark:bg-neutral-900 p-8 rounded-3xl shadow-2xl max-w-sm w-full mx-4 border border-gray-100 dark:border-neutral-800 relative transform transition-all">
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Delete message?</h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                            This action can be done for everyone, or just for you.
+                        </p>
+
+                        <div className="flex flex-col gap-3">
+                            {/* Check if all selected messages were sent by ME */}
+                            {Array.from(selectedMessages).every(id => {
+                                const msg = messages.find(m => m._id === id);
+                                return msg && isMessageFromMe(msg, currentUserId);
+                            }) && (
+                                <button
+                                    onClick={() => handleDeleteSelected(true)}
+                                    className="w-full py-3 text-red-600 font-bold hover:bg-red-50 rounded-xl transition"
+                                >
+                                    Delete for everyone
+                                </button>
+                            )}
+                            
+                            <button
+                                onClick={() => handleDeleteSelected(false)}
+                                className="w-full py-3 text-red-600 font-bold hover:bg-red-50 rounded-xl transition"
+                            >
+                                Delete for me
+                            </button>
+                            
+                            <div className="h-px bg-gray-100 dark:bg-neutral-800 my-1"></div>
+                            
+                            <button
+                                onClick={() => setShowDeleteModal(false)}
+                                className="w-full py-3 text-gray-600 dark:text-gray-300 font-bold hover:bg-gray-50 dark:hover:bg-neutral-800 rounded-xl transition"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

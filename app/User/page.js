@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import Sidebar from '../Components/Sidebar'
-import { fetchuser, fetchFollowingAction, fetchFollowersAction, upload_written_post, fetchpost, toggleLikePost, addComment } from '@/actions/useractions'
+import { fetchuser, fetchFollowingAction, fetchFollowersAction, upload_written_post, fetchpost, toggleLikePost, addComment, replyToComment, uploadMoment, uploadShort } from '@/actions/useractions'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { sendPrompt } from '@/utils/sendPrompt'
@@ -28,6 +28,18 @@ const page = () => {
   // Comment State: { [postId]: "comment text" }
   const [commentInputs, setCommentInputs] = useState({});
   const [activeCommentBox, setActiveCommentBox] = useState(null); // Post ID where comment box is open
+
+  // Reply State: { [commentId]: "reply text" }
+  const [replyInputs, setReplyInputs] = useState({});
+  const [activeReplyBox, setActiveReplyBox] = useState(null); // Comment ID where reply box is open
+
+  // Moment State
+  const [momentFormOpen, setMomentFormOpen] = useState(false);
+  const [momentForm, setMomentForm] = useState({});
+
+  // Short State
+  const [shortFormOpen, setShortFormOpen] = useState(false);
+  const [shortForm, setShortForm] = useState({});
 
   useEffect(() => {
     if (!session) {
@@ -60,6 +72,17 @@ const page = () => {
             if (data.type === 'comment') {
               // Add new comment to array
               return { ...p, comments: [...(p.comments || []), data.comment] };
+            }
+            if (data.type === 'reply') {
+              // Add reply to the correct comment's replies array
+              return { 
+                ...p, 
+                comments: p.comments.map(c => 
+                  c._id === data.commentId 
+                    ? { ...c, replies: [...(c.replies || []), data.reply] }
+                    : c
+                ) 
+              };
             }
           }
           return p;
@@ -119,6 +142,81 @@ const page = () => {
 
   const removeMedia = () => {
     setWritten_form({ ...Written_form, mediaUrl: '', mediaType: '' });
+  };
+
+  const handleMomentChange = (e) => {
+    setMomentForm({ ...momentForm, [e.target.name]: e.target.value });
+  };
+
+  const handleMomentFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 3 * 1024 * 1024) { alert("File size too large! Please upload under 3MB."); return; }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const type = file.type.startsWith('image/') ? 'image' : 'video';
+      setMomentForm({ ...momentForm, mediaUrl: reader.result, mediaType: type });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleMomentSubmit = async (e) => {
+    e.preventDefault();
+    if (!momentForm.mediaUrl) {
+      alert("Please select a photo or video for your moment!");
+      return;
+    }
+    const res = await uploadMoment(form._id, form.username || form.email.split('@')[0], form.profilepic, momentForm.mediaUrl, momentForm.mediaType, momentForm.caption);
+    if (res) {
+      alert("Moment uploaded successfully! 🚀");
+      setMomentForm({});
+      setMomentFormOpen(false);
+    }
+  };
+
+  const handleShortChange = (e) => {
+    setShortForm({ ...shortForm, [e.target.name]: e.target.value });
+  };
+
+  const handleShortFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('video/')) { alert("Only videos are allowed for Shorts!"); return; }
+    if (file.size > 20 * 1024 * 1024) { alert("File size too large! Please upload under 20MB."); return; }
+
+    const videoElement = document.createElement('video');
+    videoElement.preload = 'metadata';
+    
+    videoElement.onloadedmetadata = () => {
+      window.URL.revokeObjectURL(videoElement.src);
+      if (videoElement.duration > 60) {
+        alert(`Shorts must be 1 minute or less! Your video is ${Math.round(videoElement.duration)}s long.`);
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setShortForm({ ...shortForm, mediaUrl: reader.result, mediaType: 'video' });
+      };
+      reader.readAsDataURL(file);
+    }
+
+    videoElement.src = URL.createObjectURL(file);
+  };
+
+  const handleShortSubmit = async (e) => {
+    e.preventDefault();
+    if (!shortForm.mediaUrl) {
+      alert("Please select a video for your Short!");
+      return;
+    }
+    const res = await uploadShort(form._id, form.email, form.username || form.email.split('@')[0], form.profilepic, form.institute_name, form.university, shortForm.caption, shortForm.mediaUrl);
+    if (res) {
+      alert("Short uploaded successfully! 🎬");
+      setShortForm({});
+      setShortFormOpen(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -207,10 +305,19 @@ const page = () => {
       setCommentInputs({ ...commentInputs, [postId]: '' });
       // Emit socket event
       socket.emit('post_reaction', { postId, type: 'comment', comment: res.comment, recipientEmail: null });
+    }
+  };
 
-      // Local update (if socket doesn't bounce back fast enough, though socket handler emits to all)
-      // Ideally rely on socket, but for own UI responsiveness:
-      // setwritten_post(prev => ...) -> Actually socket is fast enough usually.
+  const onReply = async (postId, commentId) => {
+    const text = replyInputs[commentId];
+    if (!text || !text.trim()) return;
+
+    const res = await replyToComment(postId, commentId, form._id, form.email, form.name, form.profilepic, text);
+    if (res.success) {
+      setReplyInputs({ ...replyInputs, [commentId]: '' });
+      setActiveReplyBox(null);
+      // Emit socket event
+      socket.emit('post_reaction', { postId, type: 'reply', commentId, reply: res.reply, recipientEmail: null });
     }
   };
 
@@ -312,14 +419,150 @@ const page = () => {
           </div>
 
           {/* --- Post Creation Section --- */}
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-3 flex-wrap">
             <button
-              onClick={() => setpost(!post)}
+              onClick={() => { setShortFormOpen(!shortFormOpen); setMomentFormOpen(false); setpost(false); }}
+              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all"
+            >
+              <Video size={18} />
+              <span>Add Short</span>
+            </button>
+
+            <button
+              onClick={() => { setMomentFormOpen(!momentFormOpen); setShortFormOpen(false); setpost(false); }}
+              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-500 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all"
+            >
+              <span>⏱️ Add Moment</span>
+            </button>
+
+            <button
+              onClick={() => { setpost(!post); setMomentFormOpen(false); setShortFormOpen(false); }}
               className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all"
             >
               <span>✨ Create New Post</span>
             </button>
           </div>
+
+          {shortFormOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white rounded-3xl shadow-xl p-8 border border-orange-100 mt-4"
+            >
+              <form onSubmit={handleShortSubmit}>
+                <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-amber-500 mb-6 font-serif">Upload a Short 🎬</h2>
+                <p className="text-gray-500 text-sm mb-4">Shorts must be videos under 1 minute.</p>
+
+                <div className="flex flex-col md:flex-row gap-4">
+                  <div className="flex-1">
+                    <input
+                      value={shortForm.caption || ""}
+                      onChange={handleShortChange}
+                      name="caption"
+                      placeholder="Give your Short a catchy title..."
+                      className="w-full px-4 py-3 bg-gray-50 rounded-xl border-0 focus:ring-2 focus:ring-orange-500 transition-all"
+                    />
+                  </div>
+                </div>
+
+                {/* Media Preview */}
+                {shortForm.mediaUrl && (
+                  <div className="relative mt-4 w-fit max-w-full">
+                    <button
+                      type="button"
+                      onClick={() => setShortForm({ ...shortForm, mediaUrl: '', mediaType: '' })}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full shadow-md hover:bg-red-600 z-10"
+                    >
+                      <X size={16} />
+                    </button>
+                    <video src={shortForm.mediaUrl} controls className="h-40 w-auto rounded-lg border border-gray-200" />
+                  </div>
+                )}
+
+                <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-100">
+                  <div className="flex gap-2">
+                    <label className="flex items-center gap-2 px-4 py-2 bg-gray-50 text-gray-600 rounded-xl cursor-pointer hover:bg-orange-50 hover:text-orange-600 transition-colors">
+                      <Video size={20} />
+                      <span className="text-sm font-semibold">Select Video</span>
+                      <input
+                        type="file"
+                        accept="video/*"
+                        onChange={handleShortFileChange}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+
+                  <button type="submit" className="px-8 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold rounded-xl hover:shadow-lg transition-all shadow-md">
+                    Upload Short
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          )}
+
+          {momentFormOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white rounded-3xl shadow-xl p-8 border border-pink-100"
+            >
+              <form onSubmit={handleMomentSubmit}>
+                <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-violet-500 mb-6 font-serif">Share a Moment ⏱️</h2>
+                <p className="text-gray-500 text-sm mb-4">Moments disappear automatically after 24 hours.</p>
+
+                <div className="flex flex-col md:flex-row gap-4">
+                  <div className="flex-1">
+                    <input
+                      value={momentForm.caption || ""}
+                      onChange={handleMomentChange}
+                      name="caption"
+                      placeholder="Add a snappy caption..."
+                      className="w-full px-4 py-3 bg-gray-50 rounded-xl border-0 focus:ring-2 focus:ring-pink-500 transition-all"
+                    />
+                  </div>
+                </div>
+
+                {/* Media Preview */}
+                {momentForm.mediaUrl && (
+                  <div className="relative mt-4 w-fit max-w-full">
+                    <button
+                      type="button"
+                      onClick={() => setMomentForm({ ...momentForm, mediaUrl: '', mediaType: '' })}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full shadow-md hover:bg-red-600 z-10"
+                    >
+                      <X size={16} />
+                    </button>
+
+                    {momentForm.mediaType === 'image' ? (
+                      <img src={momentForm.mediaUrl} alt="Preview" className="h-40 w-auto rounded-lg border border-gray-200" />
+                    ) : (
+                      <video src={momentForm.mediaUrl} controls className="h-40 w-auto rounded-lg border border-gray-200" />
+                    )}
+                  </div>
+                )}
+
+                <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-100">
+                  <div className="flex gap-2">
+                    <label className="flex items-center gap-2 px-4 py-2 bg-gray-50 text-gray-600 rounded-xl cursor-pointer hover:bg-pink-50 hover:text-pink-600 transition-colors">
+                      <ImageIcon size={20} />
+                      <span className="text-sm font-semibold">Photo/Video</span>
+                      <input
+                        type="file"
+                        accept="image/*,video/*"
+                        onChange={handleMomentFileChange}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+
+                  <button type="submit" className="px-8 py-3 bg-gradient-to-r from-pink-500 to-rose-500 text-white font-bold rounded-xl hover:shadow-lg transition-all shadow-md">
+                    Upload Moment
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          )}
 
           {post && (
             <motion.div
@@ -458,8 +701,8 @@ const page = () => {
                       <div className="flex items-center gap-4 mt-4 pt-3 border-t border-gray-200">
                         {/* Like Button */}
                         <button
-                          onClick={() => onLike(p._id)}
-                          className="flex items-center gap-1.5 text-gray-500 hover:text-pink-500 transition-colors"
+                          className="flex items-center gap-1.5 text-gray-500 transition-colors cursor-not-allowed opacity-60"
+                          title="You cannot like your own post."
                         >
                           <Heart
                             size={20}
@@ -493,10 +736,57 @@ const page = () => {
                               {p.comments?.map((c, idx) => (
                                 <div key={idx} className="bg-white p-2 rounded-lg border border-gray-100 shadow-sm text-sm">
                                   <div className="flex items-start gap-2">
-                                    <img src={c.profilepic} className="w-6 h-6 rounded-full" alt="pic" />
-                                    <div>
-                                      <span className="font-bold text-gray-800 mr-2">{c.user_name}</span>
-                                      <span className="text-gray-600">{c.text}</span>
+                                    <img src={c.profilepic} className="w-6 h-6 rounded-full mt-1" alt="pic" />
+                                    <div className="flex-1">
+                                      <div className="flex justify-between items-start">
+                                        <div>
+                                          <span className="font-bold text-gray-800 mr-2">{c.user_name}</span>
+                                          <span className="text-gray-600">{c.text}</span>
+                                        </div>
+                                        {/* Admin Reply Toggle */}
+                                        <button 
+                                          onClick={() => setActiveReplyBox(activeReplyBox === c._id ? null : c._id)}
+                                          className="text-xs text-indigo-500 hover:text-indigo-700 font-semibold"
+                                        >
+                                          Reply
+                                        </button>
+                                      </div>
+                                      
+                                      {/* Replies List */}
+                                      {c.replies?.length > 0 && (
+                                        <div className="mt-2 pl-3 border-l-2 border-indigo-100 space-y-2">
+                                          {c.replies.map((r, rIdx) => (
+                                            <div key={rIdx} className="flex items-start gap-2 text-xs">
+                                              <img src={r.profilepic} className="w-4 h-4 rounded-full mt-0.5" alt="pic" />
+                                              <div>
+                                                <span className="font-bold text-indigo-800 mr-1">{r.user_name}</span>
+                                                <span className="bg-indigo-100 text-indigo-800 text-[9px] px-1 rounded mr-2 font-bold tracking-wide">AUTHOR</span>
+                                                <span className="text-gray-600">{r.text}</span>
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+
+                                      {/* Reply Input Box */}
+                                      {activeReplyBox === c._id && (
+                                        <div className="flex gap-2 mt-2 pt-2 border-t border-gray-50">
+                                          <input
+                                            type="text"
+                                            placeholder="Write a reply..."
+                                            className="flex-1 px-2 py-1 bg-gray-50 border border-gray-200 rounded text-xs text-gray-900 focus:outline-none focus:border-indigo-400"
+                                            value={replyInputs[c._id] || ''}
+                                            onChange={(e) => setReplyInputs({ ...replyInputs, [c._id]: e.target.value })}
+                                            onKeyDown={(e) => { if (e.key === 'Enter') onReply(p._id, c._id); e.stopPropagation(); }}
+                                          />
+                                          <button
+                                            onClick={() => onReply(p._id, c._id)}
+                                            className="px-3 bg-indigo-500 text-white text-xs font-semibold rounded hover:bg-indigo-600 transition-colors uppercase tracking-wider"
+                                          >
+                                            Reply
+                                          </button>
+                                        </div>
+                                      )}
                                     </div>
                                   </div>
                                 </div>

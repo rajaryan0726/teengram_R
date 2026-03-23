@@ -8,14 +8,8 @@ import { searchUsersAction } from '@/actions/useractions';
 const ChatListItem = ({ chat, isActive, onClick, currentUserId, isOnline }) => {
 
     // 1. Unread Logic (INTEGRATED)
-    const calculateUnreadCount = (conversation, userId) => {
-        if (!conversation.lastMessage) return 0;
-        const readBy = conversation.lastMessage.readBy || []; // Safety check
-        const isUnread = !readBy.map(id => id.toString()).includes(userId);
-        return isUnread ? 1 : 0;
-    };
-
-    const unreadCount = calculateUnreadCount(chat, currentUserId);
+    // The backend now provides an exact count of unread messages
+    const unreadCount = chat.unreadCount || 0;
 
     // 2. Determine Display Name
     const otherParticipant = chat.participants.find(
@@ -35,8 +29,8 @@ const ChatListItem = ({ chat, isActive, onClick, currentUserId, isOnline }) => {
             className={`
                 flex items-center p-4 mx-2 mb-2 rounded-2xl cursor-pointer transition-all duration-300 border border-transparent
                 ${isActive
-                    ? 'bg-white shadow-lg shadow-violet-200/50 border-violet-100 transform scale-[1.02]'
-                    : 'hover:bg-white/60 hover:shadow-sm'
+                    ? 'bg-white dark:bg-neutral-900 shadow-lg shadow-violet-200/50 dark:shadow-none border-violet-100 dark:border-neutral-800 transform scale-[1.02]'
+                    : 'hover:bg-white/60 dark:hover:bg-neutral-900/60 hover:shadow-sm'
                 }
             `}
         >
@@ -56,15 +50,15 @@ const ChatListItem = ({ chat, isActive, onClick, currentUserId, isOnline }) => {
             {/* Chat Details */}
             <div className="flex-1 min-w-0 ml-4">
                 <div className="flex justify-between items-baseline mb-1">
-                    <p className={`font-bold text-base truncate ${isActive ? 'text-gray-900' : 'text-gray-700'}`}>{displayName}</p>
+                    <p className={`font-bold text-base truncate ${isActive ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-200'}`}>{displayName}</p>
                     {lastMessageTime && (
-                        <span className="text-xs font-medium text-gray-400">
+                        <span className="text-xs font-medium text-gray-400 dark:text-gray-500">
                             {lastMessageTime}
                         </span>
                     )}
                 </div>
                 {/* Highlight last message if unread */}
-                <p className={`text-sm truncate ${isActive || unreadCount > 0 ? 'font-medium text-violet-600' : 'text-gray-500'}`}>
+                <p className={`text-sm truncate ${isActive || unreadCount > 0 ? 'font-medium text-violet-600 dark:text-violet-400' : 'text-gray-500 dark:text-gray-400'}`}>
                     {chat.lastMessage?.sender?._id === currentUserId ? 'You: ' : ''}
                     {chat.lastMessage?.content || 'Start a conversation.'}
                 </p>
@@ -84,18 +78,18 @@ const ChatListItem = ({ chat, isActive, onClick, currentUserId, isOnline }) => {
 const GlobalUserItem = ({ user, onClick }) => (
     <div
         onClick={() => onClick(user)}
-        className="flex items-center p-3 mx-2 mb-2 rounded-xl cursor-pointer hover:bg-violet-50 transition-colors border border-dashed border-gray-200 hover:border-violet-200"
+        className="flex items-center p-3 mx-2 mb-2 rounded-xl cursor-pointer hover:bg-violet-50 dark:hover:bg-neutral-900 transition-colors border border-dashed border-gray-200 dark:border-neutral-800 hover:border-violet-200 dark:hover:border-neutral-700"
     >
         <img
             src={user.profilepic || "/default-avatar.png"}
             alt={user.name}
-            className="w-10 h-10 rounded-full object-cover border border-white shadow-sm"
+            className="w-10 h-10 rounded-full object-cover border border-white dark:border-neutral-800 shadow-sm"
         />
         <div className="ml-3">
-            <p className="font-semibold text-gray-800 text-sm">{user.name}</p>
-            <p className="text-xs text-gray-500">@{user.username}</p>
+            <p className="font-semibold text-gray-800 dark:text-white text-sm">{user.name}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">@{user.username}</p>
         </div>
-        <div className="ml-auto text-violet-600">
+        <div className="ml-auto text-violet-600 dark:text-violet-400">
             <UserPlus size={18} />
         </div>
     </div>
@@ -176,24 +170,24 @@ const ChatList = ({ conversations, activeChatId, setActiveChatId, currentUserId,
 
 
     return (
-        <div className="w-80 lg:w-96 flex flex-col bg-gray-50/50 backdrop-blur-md border-r border-gray-100/50">
+        <div className="w-80 lg:w-96 flex flex-col bg-gray-50 dark:bg-[#0a0a0a] border-r border-gray-100 dark:border-neutral-800 transition-colors duration-300">
 
             {/* Header: Search/New Chat */}
-            <div className="p-6 pb-4 bg-white/50 backdrop-blur-lg border-b border-gray-100 sticky top-0 z-10">
-                <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-600 to-fuchsia-600 mb-6">
+            <div className="p-6 pb-4 bg-white dark:bg-black border-b border-gray-100 dark:border-neutral-800 sticky top-0 z-10 transition-colors duration-300">
+                <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-600 to-fuchsia-600 dark:from-violet-400 dark:to-fuchsia-400 mb-6">
                     Messages
                 </h2>
 
                 <div className="relative group">
-                    <Search className="absolute left-4 top-3.5 text-gray-400 w-5 h-5 transition-colors group-focus-within:text-violet-500" />
+                    <Search className="absolute left-4 top-3.5 text-gray-400 w-5 h-5 transition-colors group-focus-within:text-violet-500 dark:group-focus-within:text-violet-400" />
                     <input
                         type="text"
                         placeholder="Search chats or people..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-12 pr-4 py-3 bg-white text-gray-900 border border-gray-200 rounded-2xl 
-                                   focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500
-                                   placeholder-gray-400 font-medium transition-all shadow-sm group-hover:shadow-md"
+                        className="w-full pl-12 pr-4 py-3 bg-white dark:bg-neutral-900 text-gray-900 dark:text-white border border-gray-200 dark:border-neutral-800 rounded-2xl 
+                                   focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 dark:focus:border-violet-400
+                                   placeholder-gray-400 font-medium transition-all shadow-sm group-hover:shadow-md dark:shadow-none"
                     />
                 </div>
             </div>

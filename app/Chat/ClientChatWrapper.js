@@ -116,18 +116,22 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from '../Components/Sidebar';
 import ChatList from '../Components/ChatList';
 import ChatView from '../Components/ChatView';
-import { socket } from "@/lib/socket";
+import { useSocket } from '../providers/SocketProvider';
 import { findOrCreateConversation } from '@/actions/useractions';
+import CallModal from '../Components/CallModal';
 
 // The wrapper accepts the securely fetched data as props.
 export default function ClientChatWrapper({ initialConversations, currentUserId, initialActiveChatId }) {
+
+    const { socket, onlineUsers, isConnected } = useSocket();
 
     // 1. Initialize states using props from the Server
     const [conversations, setConversations] = useState(initialConversations);
     const [activeChatId, setActiveChatId] = useState(initialActiveChatId); // Use the confirmed ID
 
-    // Feature: Online Status
-    const [onlineUsers, setOnlineUsers] = useState(new Set());
+    // Call state mapping
+    const [incomingCall, setIncomingCall] = useState(null); 
+    const [activeCall, setActiveCall] = useState(null); // { targetUser, isVideo }
 
     // START NEW CHAT HANDLER
     const handleStartNewChat = async (selectedUser) => {
@@ -162,41 +166,20 @@ export default function ClientChatWrapper({ initialConversations, currentUserId,
         }
     };
 
-    // 2. Global Socket Management
+    // 2. Global Socket Event Listeners for Call Overlays and Incoming Messages
     useEffect(() => {
-        if (!socket.connected) socket.connect();
+        if (!socket || !isConnected) return;
 
-        // A. Identify User
-        socket.emit('register_user', currentUserId);
-
-        // B. Listen for Status Updates
-        const onUserOnline = (userId) => {
-            setOnlineUsers(prev => new Set(prev).add(userId));
+        const onIncomingCall = ({ offer, callerInfo }) => {
+            setIncomingCall({ offer, callerInfo });
         };
 
-        const onUserOffline = (userId) => {
-            setOnlineUsers(prev => {
-                const newSet = new Set(prev);
-                newSet.delete(userId);
-                return newSet;
-            });
-        };
-
-        // C. Receive Initial Online Users List
-        const onGetOnlineUsers = (users) => {
-            setOnlineUsers(new Set(users));
-        };
-
-        socket.on('user_online', onUserOnline);
-        socket.on('user_offline', onUserOffline);
-        socket.on('get_online_users', onGetOnlineUsers);
+        socket.on('incoming_call', onIncomingCall);
 
         return () => {
-            socket.off('user_online', onUserOnline);
-            socket.off('user_offline', onUserOffline);
-            socket.off('get_online_users', onGetOnlineUsers);
+            socket.off('incoming_call', onIncomingCall);
         };
-    }, [currentUserId]);
+    }, [socket, isConnected]);
 
     // 3. Find the currently active chat object
     // activeChatId is now a guaranteed Conversation ID (or null)
@@ -217,11 +200,9 @@ export default function ClientChatWrapper({ initialConversations, currentUserId,
         }
     }
 
-    // 4. Logic to update the list if a new message arrives (deferred for later)
-    // You would add a useEffect hook here to listen for socket events that update 'conversations'.
-
+    // 4. Logic to update the list if a new message arrives 
     useEffect(() => {
-        if (!socket.connected) socket.connect();
+        if (!socket || !isConnected) return;
 
         const onReceiveMessageGlobal = (newMessage) => {
             console.log("Global update received:", newMessage);
@@ -279,7 +260,7 @@ export default function ClientChatWrapper({ initialConversations, currentUserId,
         return () => {
             socket.off('receive_message', onReceiveMessageGlobal);
         };
-    }, []);
+    }, [socket, isConnected, activeChatId, currentUserId]);
 
     return (
         <div className='flex h-screen bg-gray-50'>
@@ -298,10 +279,61 @@ export default function ClientChatWrapper({ initialConversations, currentUserId,
                 <ChatView
                     activeChat={activeChat}
                     currentUserId={currentUserId}
-                // No need for recipientIdForNewChat prop anymore!
-                // ChatView will use activeChat.id (the Conversation ID) to send messages.
+                    onStartCall={(isVideoCall) => {
+                        const targetUser = activeChat.participants.find(p => p._id.toString() !== currentUserId);
+                        setActiveCall({ targetUser, isVideoCall });
+                    }}
                 />
             </div>
+
+            {/* CALL MODALS AND OVERLAYS */}
+            {activeCall && (
+                <CallModal 
+                    socket={socket}
+                    currentUserId={currentUserId}
+                    outgoingCallTarget={activeCall.targetUser}
+                    isVideoCall={activeCall.isVideoCall}
+                    onEndCall={() => setActiveCall(null)}
+                />
+            )}
+
+            {incomingCall && !activeCall && (
+                <div className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm flex items-center justify-center">
+                    <div className="bg-white dark:bg-neutral-900 p-8 rounded-3xl shadow-2xl flex flex-col items-center max-w-sm w-full mx-4 border border-gray-100 dark:border-neutral-800 text-center relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-violet-500 to-fuchsia-500"></div>
+                        
+                        <div className="w-24 h-24 bg-gray-100 dark:bg-neutral-800 rounded-full mb-6 relative mt-4 shadow-inner flex items-center justify-center overflow-hidden border-4 border-white dark:border-neutral-700">
+                            {/* In a real app we would fetch the caller's profile pic. For now we use standard pulse. */}
+                            <div className="absolute inset-0 bg-violet-500 rounded-full animate-ping opacity-20"></div>
+                            <span className="text-4xl">📞</span>
+                        </div>
+
+                        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Incoming Call</h3>
+                        <p className="text-gray-500 dark:text-gray-400 mb-8 max-w-xs">{incomingCall.callerInfo.isVideoCall ? 'Video' : 'Audio'} call is ringing...</p>
+
+                        <div className="flex gap-4 w-full justify-center">
+                            <button 
+                                onClick={() => {
+                                    socket.emit('call_rejected', { targetId: incomingCall.callerInfo._id });
+                                    setIncomingCall(null);
+                                }}
+                                className="px-6 py-3 bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-500 font-bold rounded-xl hover:bg-red-200 dark:hover:bg-red-500/40 transition-colors flex-1"
+                            >
+                                Decline
+                            </button>
+                            <button 
+                                onClick={() => {
+                                    setActiveCall({ targetUser: null, isVideoCall: incomingCall.callerInfo.isVideoCall });
+                                    // CallModal handles the actual connection using the incomingCall state.
+                                }}
+                                className="px-6 py-3 bg-green-500 text-white font-bold rounded-xl shadow-lg hover:bg-green-600 hover:shadow-green-500/20 transition-all flex-[2] truncate"
+                            >
+                                Answer {incomingCall.callerInfo.isVideoCall ? 'Video' : 'Audio'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

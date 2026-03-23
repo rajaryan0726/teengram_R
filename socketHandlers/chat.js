@@ -92,6 +92,11 @@ export default (io, socket, onlineUsers) => {
         socket.to(conversationId).emit('typing', { username, isTyping });
     });
 
+    // 3.5 EVENT: client sends 'delete_messages'
+    socket.on('delete_messages', ({ conversationId, messageIds }) => {
+        socket.to(conversationId).emit('messages_deleted', { conversationId, messageIds });
+    });
+
     // 4. EVENT: Mark messages as read
     socket.on('mark_messages_read', async ({ conversationId, userId, senderId }) => {
         // We can optionally update DB here if not done via API, but usually API handles bulk update.
@@ -116,6 +121,42 @@ export default (io, socket, onlineUsers) => {
             onlineUsers.delete(disconnectedUserId);
             io.emit('user_offline', disconnectedUserId);
             console.log(`User ${disconnectedUserId} went offline`);
+        }
+    });
+
+    // --- NEW: WebRTC Signaling for Video/Audio Calling ---
+    socket.on('call_offer', ({ recipientId, offer, callerInfo }) => {
+        const recipientSocketId = onlineUsers.get(recipientId);
+        if (recipientSocketId) {
+            io.to(recipientSocketId).emit('incoming_call', { offer, callerInfo });
+        }
+    });
+
+    socket.on('call_answer', ({ callerId, answer }) => {
+        const callerSocketId = onlineUsers.get(callerId);
+        if (callerSocketId) {
+            io.to(callerSocketId).emit('call_answered', { answer });
+        }
+    });
+
+    socket.on('ice_candidate', ({ targetId, candidate }) => {
+        const targetSocketId = onlineUsers.get(targetId);
+        if (targetSocketId) {
+            io.to(targetSocketId).emit('receive_ice_candidate', { candidate });
+        }
+    });
+
+    socket.on('call_ended', ({ targetId }) => {
+        const targetSocketId = onlineUsers.get(targetId);
+        if (targetSocketId) {
+            io.to(targetSocketId).emit('call_ended_by_remote');
+        }
+    });
+    
+    socket.on('call_rejected', ({ targetId }) => {
+        const targetSocketId = onlineUsers.get(targetId);
+        if (targetSocketId) {
+            io.to(targetSocketId).emit('call_rejected_by_remote');
         }
     });
 

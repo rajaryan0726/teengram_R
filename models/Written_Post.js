@@ -11,13 +11,21 @@ const Written_PostSchema = new Schema({
     profilepic: { type: String },
     mediaUrl: { type: String }, // URL or Base64 string
     mediaType: { type: String }, // 'image' or 'video'
+    isShort: { type: Boolean, default: false }, // Flag for 30s Shorts
     likes: [{ type: String }], // Array of user_ids who liked the post
     comments: [{
         user_id: { type: String },
         user_name: { type: String },
         profilepic: { type: String },
         text: { type: String },
-        createdAt: { type: Date, default: Date.now }
+        createdAt: { type: Date, default: Date.now },
+        replies: [{
+            user_id: { type: String },
+            user_name: { type: String },
+            profilepic: { type: String },
+            text: { type: String },
+            createdAt: { type: Date, default: Date.now }
+        }]
     }],
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },

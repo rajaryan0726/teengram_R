@@ -14,17 +14,21 @@ import {
   User,
   Menu,
   Trophy,
+  Moon,
+  Sun
 } from "lucide-react";
 import Link from "next/link";
+import { useTheme } from "./ThemeProvider";
 
 const Sidebar = () => {
   const pathname = usePathname(); // Get current path
+  const { theme, toggleTheme } = useTheme();
 
   const navItems = [
     { Icon: Home, label: "Home", path: "/" },
     { Icon: Search, label: "Search", path: "/search" },
     { Icon: Compass, label: "Explore", path: "/schoolCompetitions" },
-    { Icon: Film, label: "Shorts", path: "/friends" }, // Renamed for social feel
+    { Icon: Film, label: "Shorts", path: "/Shorts" },
     { Icon: MessageCircle, label: "Messages", path: "/Chat" },
     { Icon: Heart, label: "Activity", path: "/Notification" },
     { Icon: PlusSquare, label: "Create", path: "/create" },
@@ -35,7 +39,7 @@ const Sidebar = () => {
   return (
     <div
       className="hidden md:flex h-screen w-20 lg:w-64 flex-col justify-between py-6 px-3 lg:px-4
-                 bg-white/80 backdrop-blur-xl border-r border-gray-200 shadow-sm z-50 transition-all duration-300"
+                 bg-white dark:bg-black border-r border-gray-200 dark:border-neutral-800 shadow-sm z-50 transition-colors duration-300"
     >
       {/* Top Logo */}
       <div className="mb-8 flex items-center justify-center lg:justify-start lg:pl-4">
@@ -57,12 +61,12 @@ const Sidebar = () => {
               href={path}
               className={`flex items-center gap-4 px-3 py-3 rounded-2xl font-medium transition-all duration-300 group
                     ${isActive
-                  ? 'bg-gradient-to-r from-violet-100 to-fuchsia-50 text-violet-700 shadow-sm transform scale-105'
-                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  ? 'bg-gradient-to-r from-violet-100 to-fuchsia-50 text-violet-700 dark:from-violet-900/40 dark:to-fuchsia-900/40 dark:text-violet-300 shadow-sm transform scale-105'
+                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-neutral-900 dark:hover:text-white'
                 }
                 `}
             >
-              <div className={`p-1 rounded-lg transition-colors ${isActive ? '' : 'group-hover:bg-white'}`}>
+              <div className={`p-1 rounded-lg transition-colors ${isActive ? '' : 'group-hover:bg-white dark:group-hover:bg-transparent'}`}>
                 {label === "Profile" ? (
                   <img
                     src="/landing.png"
@@ -81,10 +85,18 @@ const Sidebar = () => {
       </nav>
 
       {/* Bottom More Menu */}
-      <div className="mt-auto">
+      <div className="mt-auto space-y-2">
+        <button
+          onClick={toggleTheme}
+          className="w-full flex items-center gap-4 px-3 py-3 rounded-2xl font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-neutral-900 dark:hover:text-white transition-all duration-200"
+        >
+          {theme === 'dark' ? <Sun className="w-7 h-7 text-amber-500" /> : <Moon className="w-7 h-7 text-indigo-500" />}
+          <span className="hidden lg:block text-base">{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+        </button>
+
         <Link
           href={"/more"}
-          className="flex items-center gap-4 px-3 py-3 rounded-2xl font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all duration-200"
+          className="flex items-center gap-4 px-3 py-3 rounded-2xl font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-neutral-900 dark:hover:text-white transition-all duration-200"
         >
           <Menu className="w-7 h-7" />
           <span className="hidden lg:block text-base">More</span>

@@ -7,6 +7,8 @@ import mongoose from 'mongoose'
 import Conversation from '../models/Conversation.js'
 import Message from '../models/Message.js'
 import Written_Post from '../models/Written_Post.js'
+import Moment from '../models/Moment.js'
+import { getRedisClient } from '../lib/redis.js'
 
 // Helper to serialize Mongoose documents
 // Helper to serialize Mongoose documents (deeply)
@@ -102,13 +104,48 @@ export const searchUsersAction = async (query, currentUserEmail) => {
 export const makefriend = async (sender_email, reciever_email, sender_profilepic) => {
     await connectDb();
     console.log("making friendship between you and your");
+
+    const existing = await Friends.findOne({
+        sender_email: sender_email,
+        reciever_email: reciever_email
+    }).lean();
+
+    if (existing) {
+        console.log("Friend request already exists");
+        return { success: false, error: "Already requested or following" };
+    }
+
     const newfriends = await Friends.create({
         sender_email: sender_email,
         reciever_email: reciever_email,
         sender_profilepic: sender_profilepic,
     })
-    // No return needed, or return null/true
+    return { success: true };
 }
+
+export const followUserById = async (sender_email, receiver_id, sender_profilepic) => {
+    await connectDb();
+    const receiver = await User.findById(receiver_id).select('email').lean();
+    if (receiver) {
+        const existing = await Friends.findOne({
+            sender_email: sender_email,
+            reciever_email: receiver.email
+        }).lean();
+
+        if (existing) {
+            return { success: false, error: "Already requested or following" };
+        }
+
+        await Friends.create({
+            sender_email: sender_email,
+            reciever_email: receiver.email,
+            sender_profilepic: sender_profilepic,
+        });
+        return { success: true };
+    }
+    return { success: false, error: "User not found" };
+}
+
 //function to check if the your request is accepted or not 
 export const checkfriendstatus = async (useremail, friendemail) => {
     await connectDb()
@@ -309,12 +346,19 @@ export const getConversationsForUser = async (userId) => {
             .lean() // Returns plain JavaScript objects for efficiency
             .exec();
 
-        // Manual serialization map
-        return conversations.map(chat => {
+        // Fetch unread count for each conversation
+        const convsWithUnread = await Promise.all(conversations.map(async (chat) => {
+            const unreadCount = await Message.countDocuments({
+                conversationId: chat._id,
+                sender: { $ne: userId },
+                readBy: { $nin: [userId] }
+            });
+
             const { _id, lastMessage, participants, ...rest } = chat;
             return {
                 ...rest,
                 _id: _id.toString(),
+                unreadCount: unreadCount,
                 lastMessage: lastMessage ? {
                     ...lastMessage,
                     _id: lastMessage._id.toString(),
@@ -326,7 +370,9 @@ export const getConversationsForUser = async (userId) => {
                     _id: p._id.toString()
                 }))
             };
-        });
+        }));
+
+        return convsWithUnread;
 
     } catch (error) {
         console.error("Error fetching conversations:", error);
@@ -335,11 +381,17 @@ export const getConversationsForUser = async (userId) => {
 };
 
 
-//Thi code, getMessagesForConversation, is responsible for two critical back-end tasks when a user opens a chat: marking the messages as read (a necessary update operation) and then fetching the message history (a find operation) for the chat window.
 export const getMessagesForConversation = async (conversationId, userId) => {
     try {
+        const client = await getRedisClient();
+        const cacheKey = `chat:messages:${conversationId}`;
+
+        // 1. Try to fetch from Redis Cache
+        const cachedMessages = await client.get(cacheKey);
+
         // --- CRUD OPERATION: Mark as Read (Best done on the server) ---
-        await Message.updateMany(
+        // Do this asynchronously to not block the fast read
+        Message.updateMany(
             {
                 conversationId: conversationId,
                 sender: { $ne: userId },
@@ -348,17 +400,28 @@ export const getMessagesForConversation = async (conversationId, userId) => {
             {
                 $addToSet: { readBy: userId }
             }
-        );
+        ).catch(err => console.error("Error updating read status:", err));
+
+        if (cachedMessages) {
+            console.log(`[Redis] Cache Hit for messages: ${cacheKey}`);
+            const parsed = JSON.parse(cachedMessages);
+            return parsed.filter(msg => !(msg.deletedBy && msg.deletedBy.includes(userId)));
+        }
+
+        console.log(`[Redis] Cache Miss for messages: ${cacheKey}, fetching from MongoDB`);
 
         // --- CRUD OPERATION: Retrieve Messages ---
-        const messages = await Message.find({ conversationId: conversationId })
+        const messages = await Message.find({ 
+            conversationId: conversationId,
+            deletedBy: { $ne: userId }
+        })
             .sort({ createdAt: 1 }) // Retrieve in chronological order
             .populate('sender', 'name username profilepic') // Get sender details
             .lean() // Returns plain JavaScript objects
             .exec();
 
         // Return the clean array for frontend processing
-        return messages.map(msg => ({
+        const formattedMessages = messages.map(msg => ({
             ...msg,
             _id: msg._id.toString(),
             conversationId: msg.conversationId.toString(),
@@ -368,6 +431,11 @@ export const getMessagesForConversation = async (conversationId, userId) => {
             } : null,
             readBy: msg.readBy ? msg.readBy.map(id => id.toString()) : []
         }));
+
+        // Store fetched messages in Redis and expire after 1 hour (3600 seconds)
+        await client.setEx(cacheKey, 3600, JSON.stringify(formattedMessages));
+
+        return formattedMessages;
 
     } catch (error) {
         console.error("Error fetching message history:", error);
@@ -385,25 +453,18 @@ export const saveMessageAndGetDetails = async (senderId, recipientOrConversation
     let conversation;
 
     // --- LOGIC TO FIND OR CREATE CONVERSATION ---
-
-    // A. Check if the input is already a known Conversation ID (e.g., from a group chat UI)
-    // We assume if the ID is not the current user's ID, it is either a recipient ID or a conversation ID.
-    if (recipientOrConversationId.length === 24) { // Basic check for ObjectId length
-        conversation = await Conversation.findById(recipientOrConversationId);
+    if (recipientOrConversationId.length === 24) { 
+        conversation = await Conversation.findById(recipientOrConversationId).lean();
     }
 
-    // B. If not found or if the input was a Recipient ID, search for a 1-on-1 chat
     if (!conversation) {
         const recipient = new mongoose.Types.ObjectId(recipientOrConversationId);
-
-        // Search for existing 1-on-1 conversation
         conversation = await Conversation.findOne({
             isGroup: false,
             participants: { $all: [sender, recipient] }
-        });
+        }).lean();
 
         if (!conversation) {
-            // If no 1-on-1 chat exists, create a new one
             conversation = await Conversation.create({
                 participants: [sender, recipient],
                 isGroup: false,
@@ -417,45 +478,68 @@ export const saveMessageAndGetDetails = async (senderId, recipientOrConversation
 
     conversationId = conversation._id;
 
-
-    // 🚨 2. ADMIN-ONLY MESSAGE CHECK (Verification based on your schema) 🚨
-    if (conversation.adminOnly && conversation.admin.toString() !== senderId) {
+    // 🚨 2. ADMIN-ONLY MESSAGE CHECK 
+    if (conversation.adminOnly && conversation.admin && conversation.admin.toString() !== senderId) {
         throw new Error("Unauthorized: Only the conversation admin can send messages.");
     }
 
-    // 3. Create the new Message document
-    const newMessage = await Message.create({
+    // 3. Prepare the new Message immediately in-memory for blazingly fast response
+    const messageId = new mongoose.Types.ObjectId();
+    const now = new Date();
+
+    // Fetch Sender Info minimally
+    const senderInfo = await User.findById(senderId).select('name username profilepic').lean();
+
+    const formattedMessage = {
+        _id: messageId.toString(),
+        conversationId: conversationId.toString(),
+        content: content,
+        sender: {
+            _id: senderInfo._id.toString(),
+            name: senderInfo.name,
+            username: senderInfo.username,
+            profilepic: senderInfo.profilepic
+        },
+        readBy: [senderId],
+        createdAt: now.toISOString(),
+        updatedAt: now.toISOString()
+    };
+
+    // 4. Asynchronously Create the new Message document
+    Message.create({
+        _id: messageId,
         conversationId: conversationId,
         sender: sender,
         content: content,
-        readBy: [sender], // Sender has read it by default
-    });
+        readBy: [sender],
+        createdAt: now,
+        updatedAt: now
+    }).catch(err => console.error("Error backing up message to MongoDB:", err));
 
-    // 4. Update the Conversation for sorting the chat list
-    // Use the conversation object we already fetched/created
-    await Conversation.findByIdAndUpdate(conversationId, {
-        lastMessage: newMessage._id,
-        updatedAt: Date.now(),
-    });
+    // 5. Asynchronously Update the Conversation
+    Conversation.findByIdAndUpdate(conversationId, {
+        lastMessage: messageId,
+        updatedAt: now,
+    }).catch(err => console.error("Error updating conversation in MongoDB:", err));
 
-    // 5. Populate Sender Details for Real-Time Broadcast
-    const populatedMessage = await Message.findById(newMessage._id)
-        .populate('sender', 'name username profilepic')
-        .lean();
+    // 6. Push to Redis Cache Instantly
+    try {
+        const client = await getRedisClient();
+        const cacheKey = `chat:messages:${conversationId.toString()}`;
+        const cached = await client.get(cacheKey);
+        
+        let messages = [];
+        if (cached) {
+            messages = JSON.parse(cached);
+            messages.push(formattedMessage);
+            await client.setEx(cacheKey, 3600, JSON.stringify(messages));
+            console.log(`[Redis] Pushed new message to cache: ${cacheKey}`);
+        }
+    } catch (redisErr) {
+        console.error("Redis caching error:", redisErr);
+    }
 
-    // Return the clean, populated message object
-    if (!populatedMessage) return null;
-
-    return {
-        ...populatedMessage,
-        _id: populatedMessage._id.toString(),
-        conversationId: populatedMessage.conversationId.toString(),
-        sender: populatedMessage.sender ? {
-            ...populatedMessage.sender,
-            _id: populatedMessage.sender._id.toString()
-        } : null,
-        readBy: populatedMessage.readBy ? populatedMessage.readBy.map(id => id.toString()) : []
-    };
+    return formattedMessage;
 };
 
 export const findOrCreateConversation = async (userId1, userId2) => {
@@ -489,6 +573,10 @@ export const toggleLikePost = async (postId, userId, userEmail, userName, userPi
     await connectDb();
     const post = await Written_Post.findById(postId);
     if (!post) return { success: false, message: "Post not found" };
+
+    if (post.user_id === userId) {
+        return { success: false, message: "You cannot like your own post" };
+    }
 
     const isLiked = post.likes.includes(userId);
     let action = '';
@@ -567,6 +655,51 @@ export const addComment = async (postId, userId, userEmail, userName, userPic, t
     return { success: true, comment: { ...addedComment, _id: addedComment._id.toString() } };
 };
 
+export const replyToComment = async (postId, commentId, userId, userEmail, userName, userPic, text) => {
+    await connectDb();
+    const post = await Written_Post.findById(postId);
+    if (!post) return { success: false, message: "Post not found" };
+
+    if (post.user_id !== userId) {
+        return { success: false, message: "Only the post author can reply to comments." };
+    }
+
+    const comment = post.comments.id(commentId);
+    if (!comment) return { success: false, message: "Comment not found" };
+
+    const newReply = {
+        user_id: userId,
+        user_name: userName,
+        profilepic: userPic,
+        text: text,
+        createdAt: new Date()
+    };
+
+    comment.replies.push(newReply);
+    await post.save();
+
+    // Create Notification
+    if (comment.user_id !== userId) {
+        const commentAuthor = await User.findById(comment.user_id).lean();
+        if (commentAuthor) {
+            await Notification.create({
+                recipient_email: commentAuthor.email,
+                sender_email: userEmail,
+                sender_username: userName,
+                sender_profilepic: userPic,
+                type: 'reply',
+                postId: postId,
+                text: `${userName} replied to your comment: "${text.substring(0, 20)}${text.length > 20 ? '...' : ''}"`,
+            });
+        }
+    }
+
+    const savedPost = await Written_Post.findById(postId).lean();
+    const savedComment = savedPost.comments.find(c => c._id.toString() === commentId.toString());
+    const addedReply = savedComment.replies[savedComment.replies.length - 1];
+
+    return { success: true, reply: { ...addedReply, _id: addedReply._id.toString() } };
+};
 
 export const fetchNotifications = async (userEmail) => {
     await connectDb();
@@ -576,4 +709,221 @@ export const fetchNotifications = async (userEmail) => {
         .lean();
 
     return realNotifs.map(doc => serializeDoc(doc));
+};
+
+export const deleteMessagesAction = async (conversationId, messageIds, userId, deleteForEveryone = false) => {
+    await connectDb();
+    
+    // 5 hour deletion limit (server-side enforcement)
+    const fiveHoursAgo = new Date(Date.now() - 5 * 60 * 60 * 1000);
+
+    let modifiedOrDeletedCount = 0;
+
+    if (deleteForEveryone) {
+        // Physical hard delete (Only if the user is the original sender)
+        const deleteResult = await Message.deleteMany({
+            _id: { $in: messageIds },
+            conversationId: conversationId,
+            sender: userId, // enforce sender access
+            createdAt: { $gte: fiveHoursAgo }
+        });
+        modifiedOrDeletedCount = deleteResult.deletedCount;
+    } else {
+        // Soft delete (Hide from me)
+        const updateResult = await Message.updateMany({
+            _id: { $in: messageIds },
+            conversationId: conversationId,
+            createdAt: { $gte: fiveHoursAgo }
+        }, {
+            $addToSet: { deletedBy: userId }
+        });
+        modifiedOrDeletedCount = updateResult.modifiedCount;
+    }
+
+    if (modifiedOrDeletedCount > 0) {
+        // Update Redis cache
+        try {
+            const client = await getRedisClient();
+            const cacheKey = `chat:messages:${conversationId}`;
+            const cached = await client.get(cacheKey);
+            if (cached) {
+                let messages = JSON.parse(cached);
+                
+                if (deleteForEveryone) {
+                    messages = messages.filter(msg => !messageIds.includes(msg._id));
+                } else {
+                    // Update cache to reflect soft-delete tracking dynamically
+                    messages = messages.map(msg => {
+                        if (messageIds.includes(msg._id)) {
+                            return { ...msg, deletedBy: [...(msg.deletedBy || []), userId] }
+                        }
+                        return msg;
+                    });
+                }
+                
+                await client.setEx(cacheKey, 3600, JSON.stringify(messages));
+                console.log(`[Redis] Updated messages in cache for deletion: ${cacheKey}`);
+            }
+        } catch (e) {
+            console.error("Redis caching error during deletion:", e);
+        }
+
+        // Fix last message if it was deleted (Only strictly necessary on hard deletes, but good to run)
+        const lastMsg = await Message.findOne({ conversationId }).sort({ createdAt: -1 }).select('_id');
+        await Conversation.findByIdAndUpdate(conversationId, {
+            lastMessage: lastMsg ? lastMsg._id : null
+        });
+
+        return { success: true, count: modifiedOrDeletedCount, deleteForEveryone };
+    }
+    
+    return { success: false, message: "No messages deleted." };
+}
+
+// ==========================================
+// NEW: MOMENTS & HOME FEED ACTIONS
+// ==========================================
+
+export const uploadMoment = async (userId, userName, profilepic, mediaUrl, mediaType, caption) => {
+    await connectDb();
+    const newMoment = await Moment.create({
+        user_id: userId,
+        user_name: userName,
+        profilepic: profilepic,
+        mediaUrl: mediaUrl,
+        mediaType: mediaType,
+        caption: caption
+    });
+    return serializeDoc(newMoment);
+};
+
+export const fetchFeedMoments = async (userEmail, userId) => {
+    await connectDb();
+    
+    // 1. Get Following Users
+    let followingDocs = await Friends.find({ sender_email: userEmail, request_accepted: true }).lean();
+    const followingEmails = followingDocs.map(d => d.reciever_email);
+    const followingUsers = await User.find({ email: { $in: followingEmails } }).select('_id').lean();
+    const followingIds = followingUsers.map(u => u._id.toString());
+    
+    const targetIds = [...followingIds, userId];
+    
+    // Fetch moments created within 24 hours (TTL handles deletion, but double check in query)
+    let moments = await Moment.find({ user_id: { $in: targetIds } }).sort({ createdAt: -1 }).lean();
+    return moments.map(serializeDoc);
+};
+
+export const markMomentViewed = async (momentId, userId, username, profilepic) => {
+    await connectDb();
+    const moment = await Moment.findById(momentId);
+    if (!moment) return { success: false };
+
+    // Check if already viewed
+    const alreadyViewed = moment.viewers.some(v => v.user_id === userId);
+    if (!alreadyViewed) {
+        moment.viewers.push({
+            user_id: userId,
+            username: username,
+            profilepic: profilepic
+        });
+        await moment.save();
+    }
+    return { success: true };
+};
+
+export const fetchHomeFeed = async (userEmail, userId) => {
+    await connectDb();
+    
+    // 1. Get Following
+    let followingDocs = await Friends.find({ sender_email: userEmail, request_accepted: true }).lean();
+    const followingEmails = followingDocs.map(d => d.reciever_email);
+    const followingUsers = await User.find({ email: { $in: followingEmails } }).select('_id').lean();
+    const followingIds = followingUsers.map(u => u._id.toString());
+    
+    // 2. Get Followers
+    let followerDocs = await Friends.find({ reciever_email: userEmail, request_accepted: true }).lean();
+    const followerEmails = followerDocs.map(d => d.sender_email);
+    const followerUsers = await User.find({ email: { $in: followerEmails } }).select('_id').lean();
+    const followerIds = followerUsers.map(u => u._id.toString());
+    
+    // 3. Get all posts excluding current user's
+    let allPosts = await Written_Post.find({ user_id: { $ne: userId } }).sort({ createdAt: -1 }).lean();
+    
+    // 4. Categorize and Sort
+    let tier1 = []; // Followings
+    let tier2 = []; // Followers
+    let tier3 = []; // Others
+    
+    allPosts.forEach(post => {
+        const pUserId = post.user_id;
+        
+        if (followingIds.includes(pUserId)) {
+            tier1.push(post);
+        } else if (followerIds.includes(pUserId)) {
+            tier2.push(post);
+        } else {
+            tier3.push(post);
+        }
+    });
+    
+    const sortedFeed = [...tier1, ...tier2, ...tier3];
+    return sortedFeed.map(serializeDoc);
+};
+
+// ==========================================
+// NEW: SHORTS ACTIONS
+// ==========================================
+
+export const uploadShort = async (userId, userEmail, userName, profilepic, institute_name, university_name, caption, mediaUrl) => {
+    await connectDb();
+    
+    const newShort = await Written_Post.create({
+        user_id: userId,
+        user_name: userName,
+        profilepic: profilepic,
+        institute_name: institute_name,
+        university_name: university_name,
+        content: `Short by ${userName}`, // Defaulting required field
+        caption: caption,
+        mediaUrl: mediaUrl,
+        mediaType: 'video',
+        isShort: true
+    });
+    
+    return serializeDoc(newShort);
+};
+
+export const fetchShortsFeed = async (userEmail, userId) => {
+    await connectDb();
+    
+    let followingDocs = await Friends.find({ sender_email: userEmail, request_accepted: true }).lean();
+    const followingEmails = followingDocs.map(d => d.reciever_email);
+    const followingUsers = await User.find({ email: { $in: followingEmails } }).select('_id').lean();
+    const followingIds = followingUsers.map(u => u._id.toString());
+    
+    let followerDocs = await Friends.find({ reciever_email: userEmail, request_accepted: true }).lean();
+    const followerEmails = followerDocs.map(d => d.sender_email);
+    const followerUsers = await User.find({ email: { $in: followerEmails } }).select('_id').lean();
+    const followerIds = followerUsers.map(u => u._id.toString());
+    
+    let allShorts = await Written_Post.find({ isShort: true, mediaType: 'video', user_id: { $ne: userId } }).sort({ createdAt: -1 }).lean();
+    
+    let tier1 = []; 
+    let tier2 = []; 
+    let tier3 = []; 
+    
+    allShorts.forEach(post => {
+        const pUserId = post.user_id;
+        
+        if (followingIds.includes(pUserId)) {
+            tier1.push(post);
+        } else if (followerIds.includes(pUserId)) {
+            tier2.push(post);
+        } else {
+            tier3.push(post);
+        }
+    });
+    
+    const sortedFeed = [...tier1, ...tier2, ...tier3];
+    return sortedFeed.map(serializeDoc);
 };

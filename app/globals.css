@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:is(.dark *));
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -19,13 +21,12 @@
   /* Deep Indigo for text */
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0f172a;
-    /* Slate 900 */
-    --foreground: #f8fafc;
-    /* Slate 50 */
-  }
+/* Rely on the class added by the ThemeProvider instead of the OS media preference */
+.dark {
+  --background: #000000;
+  /* Pure Black */
+  --foreground: #f8fafc;
+  /* Slate 50 */
 }
 
 body {

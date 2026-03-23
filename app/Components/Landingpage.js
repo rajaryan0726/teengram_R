@@ -10,7 +10,7 @@ const Landingpage = () => {
     const router=useRouter();
     useEffect(() => {
       if(session){
-        router.push('/Landingpage')
+        router.push('/feed')
       }
     }, [router,session])
     
