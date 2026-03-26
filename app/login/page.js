@@ -1,18 +1,40 @@
 "use client"
-import React from 'react'
-import { useEffect } from 'react'
-import { useSession, signIn, signOut } from 'next-auth/react'
-import Link from 'next/link'
+import React, { useState, useEffect } from 'react'
+import { useSession, signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+
 const page = () => {
-  const { data: session } = useSession()
+  const { data: session } = useSession();
   const router = useRouter();
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+
   useEffect(() => {
     document.title = "Login - TeenGram"
     if (session) {
       router.push('/feed')
     }
   }, [router, session])
+
+  const handleTestingLogin = async (e) => {
+    e.preventDefault();
+    if (!username) return;
+    setLoading(true);
+    const res = await signIn("credentials", {
+      username,
+      password,
+      redirect: false
+    });
+    
+    if (res?.error) {
+       alert("Login failed");
+       setLoading(false);
+    } else {
+       router.push('/feed');
+    }
+  };
+
   return (
     <div>
       <div className="bg-black flex justify-center items-center h-screen">
@@ -21,18 +43,33 @@ const page = () => {
           <img src="/landing.png" alt="Teengram" className="object-cover w-full h-75%" />
         </div>
         {/* <!-- Right: Login Form --> */}
-        <div className="lg:p-36 md:p-52 sm:20 p-8 w-full lg:w-1/2   shadow-lg">
+        <div className="lg:p-36 md:p-40 sm:p-20 p-6 w-full lg:w-1/2 shadow-lg">
 
-          <h1 className="px-15 text-3xl text-slate-400 font-serif font-semibold mb-4">TeenGram</h1>
-          <form action="#" method="POST">
+          <h1 className="text-3xl lg:text-4xl text-slate-400 font-serif font-semibold mb-6 text-center lg:text-left">TeenGram</h1>
+          <form onSubmit={handleTestingLogin}>
             <div className="mb-4">
               <label className="block text-gray-600">Username</label>
-              <input type="text" id="username" name="username" className="text-white w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500" />
+              <input 
+                type="text" 
+                id="username" 
+                name="username" 
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="text-white w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500 bg-gray-900" 
+                required
+              />
             </div>
             {/* <!-- Password Input --> */}
             <div className="mb-4">
               <label className=" block text-gray-600">Password</label>
-              <input type="password" id="password" name="password" className="text-white w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500" />
+              <input 
+                type="password" 
+                id="password" 
+                name="password" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="text-white w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500 bg-gray-900" 
+              />
             </div>
             {/* <!-- Remember Me Checkbox --> */}
             <div className="mb-4 flex items-center">
@@ -44,12 +81,13 @@ const page = () => {
               <a href="#" className="hover:underline">Forgot Password?</a>
             </div>
             {/* <!-- Login Button --> */}
-            <a
-              href="http://localhost:5173/"
-              className="bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-md py-2 px-4 w-full text-center block"
+            <button
+              type="submit"
+              disabled={loading}
+              className="bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white font-semibold rounded-md py-2 px-4 w-full text-center block"
             >
-              Login
-            </a>
+              {loading ? 'Logging in...' : 'Login'}
+            </button>
           </form>
           {/* <!-- Sign up  Link --> */}
           <div className="mt-6 flex flex-col items-center gap-3">

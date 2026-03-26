@@ -170,7 +170,7 @@ const ChatList = ({ conversations, activeChatId, setActiveChatId, currentUserId,
 
 
     return (
-        <div className="w-80 lg:w-96 flex flex-col bg-gray-50 dark:bg-[#0a0a0a] border-r border-gray-100 dark:border-neutral-800 transition-colors duration-300">
+        <div className="w-full h-full flex flex-col bg-gray-50 dark:bg-[#0a0a0a] border-r border-gray-100 dark:border-neutral-800 transition-colors duration-300">
 
             {/* Header: Search/New Chat */}
             <div className="p-6 pb-4 bg-white dark:bg-black border-b border-gray-100 dark:border-neutral-800 sticky top-0 z-10 transition-colors duration-300">

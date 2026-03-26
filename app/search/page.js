@@ -156,35 +156,35 @@ const SearchPage = () => {
     };
 
     return (
-        <div className="flex bg-gray-50 h-screen w-full overflow-hidden">
+        <div className="flex bg-gray-50 dark:bg-black h-screen w-full overflow-hidden">
             <Sidebar className="flex-1" />
 
-            <main className="flex-1 p-4 lg:p-8 overflow-y-auto w-full">
-                <div className="max-w-4xl mx-auto space-y-8">
+            <main className="flex-1 p-2 lg:p-8 overflow-y-auto w-full pb-20 md:pb-8">
+                <div className="max-w-4xl mx-auto space-y-4 lg:space-y-8">
 
                     {/* Header & Search Input */}
-                    <div className="bg-white rounded-3xl shadow-xl p-8 border border-white/20 backdrop-blur-xl">
-                        <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-600 to-pink-500 mb-2">
+                    <div className="bg-white dark:bg-neutral-900 rounded-2xl lg:rounded-3xl shadow-xl p-4 lg:p-8 border border-white/20 dark:border-neutral-800 backdrop-blur-xl">
+                        <h1 className="text-2xl lg:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-600 to-pink-500 mb-1 lg:mb-2 text-center lg:text-left">
                             Find Friends 🔍
                         </h1>
-                        <p className="text-gray-500 mb-8">Search for people by name or @username to connect.</p>
+                        <p className="hidden md:block text-gray-500 dark:text-neutral-400 mb-8">Search for people by name or @username to connect.</p>
 
-                        <div className="relative group">
+                        <div className="relative group mt-4 lg:mt-0">
                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                <SearchIcon className="h-6 w-6 text-gray-400 group-focus-within:text-violet-500 transition-colors" />
+                                <SearchIcon className="h-5 w-5 lg:h-6 lg:w-6 text-gray-400 group-focus-within:text-violet-500 transition-colors" />
                             </div>
                             <input
                                 type="text"
-                                className="block w-full pl-12 pr-4 py-4 bg-gray-50 border-2 border-gray-100 rounded-2xl 
-                                           text-gray-900 placeholder-gray-400 focus:outline-none focus:border-violet-500 
-                                           focus:ring-4 focus:ring-violet-500/10 transition-all text-lg font-medium"
-                                placeholder="Search by name or username..."
+                                className="block w-full pl-10 lg:pl-12 pr-4 py-3 lg:py-4 bg-gray-50 dark:bg-neutral-800 border-2 border-gray-100 dark:border-neutral-700 rounded-xl lg:rounded-2xl 
+                                           text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-violet-500 
+                                           focus:ring-4 focus:ring-violet-500/10 transition-all text-base lg:text-lg font-medium"
+                                placeholder="Search friends..."
                                 value={query}
                                 onChange={handleSearch}
                             />
                             {isLoading && (
                                 <div className="absolute inset-y-0 right-4 flex items-center">
-                                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-violet-600"></div>
+                                    <div className="animate-spin rounded-full h-4 w-4 lg:h-5 lg:w-5 border-b-2 border-violet-600"></div>
                                 </div>
                             )}
                         </div>
@@ -192,16 +192,16 @@ const SearchPage = () => {
 
                     {/* Results Grid */}
                     {results.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-6">
                             {results.map((user) => (
                                 <motion.div
                                     key={user._id}
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    className="bg-white rounded-2xl shadow-md p-6 flex flex-col items-center border border-gray-100 hover:shadow-xl transition-shadow"
+                                    className="bg-white dark:bg-neutral-900 rounded-2xl shadow-md p-3 lg:p-6 flex flex-col items-center border border-gray-100 dark:border-neutral-800 hover:shadow-xl transition-shadow"
                                 >
                                     <Link href={{ pathname: '/ViewFriends', query: { friend_email: user.email, user_email: session.user.email } }} className="w-full flex flex-col items-center cursor-pointer">
-                                        <div className="w-24 h-24 rounded-full p-1 bg-gradient-to-tr from-violet-500 to-pink-500 mb-4 transition-transform hover:scale-105">
+                                        <div className="w-16 h-16 lg:w-24 lg:h-24 rounded-full p-1 bg-gradient-to-tr from-violet-500 to-pink-500 mb-2 lg:mb-4 transition-transform hover:scale-105">
                                             <img
                                                 src={user.profilepic || "https://via.placeholder.com/150"}
                                                 alt={user.name}
@@ -209,11 +209,11 @@ const SearchPage = () => {
                                             />
                                         </div>
 
-                                        <h3 className="text-xl font-bold text-gray-900 text-center truncate w-full hover:text-violet-600 transition-colors">{user.name}</h3>
-                                        <p className="text-violet-600 font-medium text-sm mb-4">@{user.username}</p>
+                                        <h3 className="text-base lg:text-xl font-bold text-gray-900 dark:text-white text-center truncate w-full hover:text-violet-600 transition-colors">{user.name}</h3>
+                                        <p className="text-violet-600 font-medium text-xs lg:text-sm mb-2 lg:mb-4">@{user.username}</p>
 
                                         {user.institute_name && (
-                                            <p className="text-gray-500 text-xs mb-4 text-center line-clamp-1">{user.institute_name}</p>
+                                            <p className="hidden md:block text-gray-500 text-xs mb-4 text-center line-clamp-1">{user.institute_name}</p>
                                         )}
                                     </Link>
 

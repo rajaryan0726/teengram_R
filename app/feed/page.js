@@ -175,14 +175,14 @@ const page = () => {
     <div className="flex bg-gray-50 dark:bg-black h-screen w-full overflow-hidden transition-colors">
       <Sidebar className="flex-1" />
 
-      <main className="flex-1 p-4 lg:p-8 overflow-y-auto custom-scrollbar">
-        <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <main className="flex-1 p-2 lg:p-8 overflow-y-auto custom-scrollbar pb-20 md:pb-8">
+        <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
             
           {/* Moments Section (Top on mobile, Right side on desktop) */}
           <div className="lg:col-start-3 lg:row-start-1">
-             <div className="bg-white dark:bg-neutral-900 rounded-3xl shadow-sm border border-gray-100 dark:border-neutral-800 py-4 px-2 lg:p-6 lg:sticky lg:top-4">
+             <div className="bg-white dark:bg-neutral-900 rounded-2xl lg:rounded-3xl shadow-sm border border-gray-100 dark:border-neutral-800 py-3 px-2 lg:p-6 lg:sticky lg:top-4">
                 <h3 className="hidden lg:block font-bold text-gray-800 dark:text-gray-100 mb-6 font-serif text-lg">Moments</h3>
-                <div className="flex flex-row lg:flex-col gap-4 overflow-x-auto lg:overflow-x-hidden lg:overflow-y-auto lg:max-h-[75vh] custom-scrollbar pb-2 px-2">
+                <div className="flex flex-row lg:flex-col gap-3 lg:gap-4 overflow-x-auto lg:overflow-x-hidden lg:overflow-y-auto lg:max-h-[75vh] custom-scrollbar pb-2 px-1 lg:px-2">
                    <Link href="/User" className="flex flex-col lg:flex-row items-center gap-2 lg:gap-4 min-w-[70px] cursor-pointer group shrink-0 w-full">
                       <div className="relative w-16 h-16 rounded-full border-2 border-dashed border-gray-300 dark:border-gray-600 flex justify-center items-center bg-gray-50 dark:bg-neutral-800 group-hover:bg-gray-100 dark:group-hover:bg-neutral-700 transition shrink-0">
                          <span className="text-2xl text-gray-400 dark:text-gray-500">+</span>
@@ -233,33 +233,33 @@ const page = () => {
                       whileInView={{ opacity: 1, y: 0 }}
                       viewport={{ once: true }}
                       key={i}
-                      className="bg-white dark:bg-neutral-900 p-5 rounded-3xl shadow-lg border border-gray-100 dark:border-neutral-800 relative"
+                      className="bg-white dark:bg-neutral-900 p-4 lg:p-5 rounded-2xl lg:rounded-3xl shadow-lg border border-gray-100 dark:border-neutral-800 relative"
                     >
-                      <div className="flex items-center justify-between mb-4">
-                        <Link href={p.user_id === form._id ? "/User" : { pathname: "/ViewFriends", query: { friend_email: p.user_email || p.user_id } }} className="flex items-center gap-3 group relative">
+                      <div className="flex items-center justify-between mb-3 lg:mb-4">
+                        <Link href={p.user_id === form._id ? "/User" : { pathname: "/ViewFriends", query: { friend_email: p.user_email || p.user_id } }} className="flex items-center gap-2 lg:gap-3 group relative">
                             <div className="relative">
-                                <img src={p.profilepic} className="w-12 h-12 rounded-full object-cover border-2 border-gray-100 dark:border-neutral-700 group-hover:border-indigo-400 transition" alt="avatar" />
+                                <img src={p.profilepic} className="w-10 h-10 lg:w-12 lg:h-12 rounded-full object-cover border-2 border-gray-100 dark:border-neutral-700 group-hover:border-indigo-400 transition" alt="avatar" />
                                 {onlineUsers?.has(p.user_id) && (
-                                    <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white dark:border-neutral-900 rounded-full shadow-sm animate-pulse"></span>
+                                    <span className="absolute bottom-0 right-0 w-3 h-3 lg:w-3.5 lg:h-3.5 bg-green-500 border-2 border-white dark:border-neutral-900 rounded-full shadow-sm animate-pulse"></span>
                                 )}
                             </div>
                             <div>
-                                <h4 className="font-bold text-base text-gray-900 dark:text-gray-100 group-hover:text-indigo-600 transition">{p.user_name}</h4>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">{new Date(p.createdAt).toLocaleDateString()} at {new Date(p.createdAt).toLocaleTimeString([], {timeStyle: 'short'})}</p>
+                                <h4 className="font-bold text-sm lg:text-base text-gray-900 dark:text-gray-100 group-hover:text-indigo-600 transition">{p.user_name}</h4>
+                                <p className="text-[10px] lg:text-xs text-gray-500 dark:text-gray-400">{new Date(p.createdAt).toLocaleDateString()} at {new Date(p.createdAt).toLocaleTimeString([], {timeStyle: 'short'})}</p>
                             </div>
                         </Link>
                       </div>
 
-                      <p className="text-gray-800 dark:text-gray-200 leading-relaxed mb-4">{p.content}</p>
+                      <p className="text-sm lg:text-base text-gray-800 dark:text-gray-200 leading-relaxed mb-3 lg:mb-4">{p.content}</p>
 
                       {p.mediaType === 'image' && (
-                        <div className="rounded-2xl overflow-hidden mb-4 border border-gray-100 dark:border-neutral-800 bg-gray-50 dark:bg-black">
-                          <img src={p.mediaUrl} alt="Post media" className="w-full h-auto object-cover max-h-[600px]" />
+                        <div className="rounded-xl lg:rounded-2xl overflow-hidden mb-3 lg:mb-4 border border-gray-100 dark:border-neutral-800 bg-gray-50 dark:bg-black">
+                          <img src={p.mediaUrl} alt="Post media" className="w-full h-auto object-cover max-h-[400px] lg:max-h-[600px]" />
                         </div>
                       )}
                       {p.mediaType === 'video' && (
-                        <div className="rounded-2xl overflow-hidden mb-4 border border-gray-100 dark:border-neutral-800 bg-black">
-                          <video src={p.mediaUrl} controls className="w-full h-auto max-h-[600px]" />
+                        <div className="rounded-xl lg:rounded-2xl overflow-hidden mb-3 lg:mb-4 border border-gray-100 dark:border-neutral-800 bg-black">
+                          <video src={p.mediaUrl} controls className="w-full h-auto max-h-[400px] lg:max-h-[600px]" />
                         </div>
                       )}
 

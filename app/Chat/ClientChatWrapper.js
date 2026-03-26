@@ -174,10 +174,17 @@ export default function ClientChatWrapper({ initialConversations, currentUserId,
             setIncomingCall({ offer, callerInfo });
         };
 
+        const onGlobalCallEnd = () => {
+            setIncomingCall(null);
+            setActiveCall(null); // Forces CallModal to unmount securely
+        };
+
         socket.on('incoming_call', onIncomingCall);
+        socket.on('call_ended_by_remote', onGlobalCallEnd);
 
         return () => {
             socket.off('incoming_call', onIncomingCall);
+            socket.off('call_ended_by_remote', onGlobalCallEnd);
         };
     }, [socket, isConnected]);
 
@@ -263,27 +270,39 @@ export default function ClientChatWrapper({ initialConversations, currentUserId,
     }, [socket, isConnected, activeChatId, currentUserId]);
 
     return (
-        <div className='flex h-screen bg-gray-50'>
+        <div className='flex h-dvh bg-gray-50 dark:bg-black'>
             <Sidebar />
 
-            <div className="flex flex-1 overflow-hidden">
-                <ChatList
-                    conversations={conversations}
-                    activeChatId={activeChatId}
-                    setActiveChatId={setActiveChatId}
-                    currentUserId={currentUserId}
-                    onlineUsers={onlineUsers} // Pass for list indicators
-                    onStartNewChat={handleStartNewChat} // 🚨 FIX: Pass the handler
-                />
+            <div className="flex flex-1 h-full min-h-0 overflow-hidden relative">
+                {/* 
+                   On Mobile (sm): 
+                   - If NO activeChatId, Show ChatList (block), Hide ChatView (hidden)
+                   - If activeChatId, Hide ChatList (hidden), Show ChatView (block)
+                   On Desktop (md+):
+                   - Both are visible (flex)
+                */}
+                <div className={`w-full md:w-80 lg:w-96 h-full overflow-y-auto border-r border-gray-200 dark:border-neutral-800 ${activeChatId ? 'hidden md:block' : 'block'}`}>
+                    <ChatList
+                        conversations={conversations}
+                        activeChatId={activeChatId}
+                        setActiveChatId={setActiveChatId}
+                        currentUserId={currentUserId}
+                        onlineUsers={onlineUsers}
+                        onStartNewChat={handleStartNewChat}
+                    />
+                </div>
 
-                <ChatView
-                    activeChat={activeChat}
-                    currentUserId={currentUserId}
-                    onStartCall={(isVideoCall) => {
-                        const targetUser = activeChat.participants.find(p => p._id.toString() !== currentUserId);
-                        setActiveCall({ targetUser, isVideoCall });
-                    }}
-                />
+                <div className={`flex-1 h-full overflow-hidden ${!activeChatId ? 'hidden md:flex' : 'flex'}`}>
+                    <ChatView
+                        activeChat={activeChat}
+                        currentUserId={currentUserId}
+                        onBack={() => setActiveChatId(null)} // 🚨 Important for mobile
+                        onStartCall={(isVideoCall) => {
+                            const targetUser = activeChat.participants.find(p => p._id.toString() !== currentUserId);
+                            setActiveCall({ targetUser, isVideoCall });
+                        }}
+                    />
+                </div>
             </div>
 
             {/* CALL MODALS AND OVERLAYS */}
@@ -292,8 +311,12 @@ export default function ClientChatWrapper({ initialConversations, currentUserId,
                     socket={socket}
                     currentUserId={currentUserId}
                     outgoingCallTarget={activeCall.targetUser}
+                    incomingCall={incomingCall}
                     isVideoCall={activeCall.isVideoCall}
-                    onEndCall={() => setActiveCall(null)}
+                    onEndCall={() => {
+                        setActiveCall(null);
+                        setIncomingCall(null); // Fully reset UI state
+                    }}
                 />
             )}
 

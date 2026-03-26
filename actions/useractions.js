@@ -324,7 +324,29 @@ export const fetchpost = async (user_id) => {
 }
 
 
-//chat related query4
+export const checkUnreadMessages = async (userId) => {
+    await connectDb();
+    
+    // 1. Get all conversations the user is a part of
+    const userConversations = await Conversation.find({
+        participants: userId
+    }).select('_id').lean();
+    
+    const conversationIds = userConversations.map(c => c._id);
+    
+    if (conversationIds.length === 0) return false;
+
+    // 2. Count unread messages strictly in these specific conversations
+    const count = await Message.countDocuments({
+        conversationId: { $in: conversationIds },
+        sender: { $ne: userId },
+        readBy: { $nin: [userId] },
+        deletedBy: { $ne: userId } 
+    });
+    
+    return count > 0;
+};
+
 //Retrieves all conversations a user is part of, with key related data populated.
 // NOTE: Deep population needs careful serialization if using .lean() with complex types
 export const getConversationsForUser = async (userId) => {

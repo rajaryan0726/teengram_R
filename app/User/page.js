@@ -323,22 +323,22 @@ const page = () => {
 
 
   return (
-    <div className="flex bg-gray-50 h-screen w-full overflow-hidden">
+    <div className="flex bg-gray-50 dark:bg-black h-screen w-full overflow-hidden">
       <Sidebar className="flex-1" />
 
-      <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
-        <div className="max-w-5xl mx-auto space-y-6">
+      <main className="flex-1 p-2 md:p-8 overflow-y-auto pb-20 md:pb-8">
+        <div className="max-w-5xl mx-auto space-y-4 md:space-y-6">
 
           {/* --- Profile Header Card --- */}
-          <div className="bg-white rounded-3xl shadow-xl overflow-hidden relative">
+          <div className="bg-white dark:bg-neutral-900 rounded-2xl md:rounded-3xl shadow-xl overflow-hidden relative">
             {/* Background Banner */}
-            <div className="h-32 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
+            <div className="h-24 md:h-32 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
 
-            <div className="px-8 pb-8">
-              <div className="relative flex flex-col md:flex-row items-end -mt-12 mb-6 gap-6">
+            <div className="px-4 md:px-8 pb-6 md:pb-8">
+              <div className="relative flex flex-col items-center md:items-end md:flex-row -mt-10 md:-mt-12 mb-4 md:mb-6 gap-4 md:gap-6">
                 {/* Avatar */}
                 <div className="relative">
-                  <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-white shadow-lg overflow-hidden bg-white">
+                  <div className="w-28 h-28 md:w-40 md:h-40 rounded-full border-4 border-white dark:border-neutral-900 shadow-lg overflow-hidden bg-white dark:bg-neutral-800">
                     <img
                       src={form.profilepic || "https://via.placeholder.com/150"}
                       alt="Profile"
@@ -347,8 +347,8 @@ const page = () => {
                   </div>
                   {/* Verification Badge (Optional) */}
                   {form.verified && (
-                    <div className="absolute bottom-2 right-2 bg-blue-500 text-white p-1 rounded-full border-2 border-white">
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <div className="absolute bottom-1 right-1 md:bottom-2 md:right-2 bg-blue-500 text-white p-1 rounded-full border-2 border-white">
+                      <svg className="w-3 h-3 md:w-4 md:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
                     </div>
@@ -356,22 +356,22 @@ const page = () => {
                 </div>
 
                 {/* User Info & Actions */}
-                <div className="flex-1 w-full md:w-auto text-center md:text-left">
-                  <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-4">
+                <div className="flex-1 w-full text-center md:text-left">
+                  <div className="flex flex-col md:flex-row justify-between items-center md:items-center gap-3 md:gap-4">
                     <div>
-                      <h1 className="text-3xl font-bold text-gray-900">{form.name || "User Name"}</h1>
-                      <p className="text-gray-500 font-medium">@{form.username || "username"}</p>
+                      <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">{form.name || "User Name"}</h1>
+                      <p className="text-gray-500 dark:text-neutral-400 font-medium">@{form.username || "username"}</p>
                       {form.institute_name && (
-                        <p className="text-sm text-indigo-600 font-medium mt-1">{form.institute_name} {form.university ? `• ${form.university}` : ''}</p>
+                        <p className="text-xs md:text-sm text-indigo-600 dark:text-indigo-400 font-medium mt-1">{form.institute_name} {form.university ? `• ${form.university}` : ''}</p>
                       )}
                     </div>
 
-                    <div className="flex gap-3">
+                    <div className="flex gap-2 md:gap-3 w-full md:w-auto">
                       <Link href={{
                         pathname: "/Updateuser",
                         query: { email: form.email }
-                      }}>
-                        <button className="px-6 py-2 bg-white border border-gray-200 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm">
+                      }} className="flex-1">
+                        <button className="w-full px-4 md:px-6 py-2 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 text-gray-700 dark:text-neutral-300 text-sm md:text-base font-semibold rounded-xl hover:bg-gray-50 dark:hover:bg-neutral-700 hover:border-gray-300 transition-all shadow-sm">
                           Edit Profile
                         </button>
                       </Link>
@@ -379,67 +379,67 @@ const page = () => {
                       <Link href={{
                         pathname: "/verify",
                         query: { name: form.name, institute_name: form.institute_name }
-                      }}>
-                        <button className="px-6 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold rounded-xl hover:shadow-lg hover:opacity-90 transition-all shadow-md">
-                          Verify Check
+                      }} className="flex-1">
+                        <button className="w-full px-4 md:px-6 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-sm md:text-base font-semibold rounded-xl hover:shadow-lg hover:opacity-90 transition-all shadow-md">
+                          Verify
                         </button>
                       </Link>
                     </div>
                   </div>
 
                   {/* Bio */}
-                  <div className="mt-4 max-w-2xl text-gray-600 leading-relaxed">
+                  <div className="mt-3 md:mt-4 max-w-2xl text-sm md:text-base text-gray-600 dark:text-neutral-400 leading-relaxed">
                     {form.bio || "No bio yet."}
                   </div>
                 </div>
               </div>
 
               {/* Stats Bar */}
-              <div className="grid grid-cols-3 gap-4 border-t border-gray-100 pt-6">
-                <div className="text-center p-4 rounded-2xl bg-gray-50 hover:bg-indigo-50 transition-colors cursor-pointer">
-                  <span className="block text-2xl font-bold text-indigo-600">{written_post.length}</span>
-                  <span className="text-gray-500 text-sm font-medium uppercase tracking-wide">Posts</span>
+              <div className="grid grid-cols-3 gap-2 md:gap-4 border-t border-gray-100 dark:border-neutral-800 pt-4 md:pt-6">
+                <div className="text-center p-2 md:p-4 rounded-xl md:rounded-2xl bg-gray-50 dark:bg-neutral-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors cursor-pointer">
+                  <span className="block text-xl md:text-2xl font-bold text-indigo-600 dark:text-indigo-400">{written_post.length}</span>
+                  <span className="text-gray-400 dark:text-neutral-500 text-[10px] md:text-sm font-medium uppercase tracking-wide">Posts</span>
                 </div>
                 <div
                   onClick={() => setseefollower(true)}
-                  className={`text-center p-4 rounded-2xl transition-colors cursor-pointer ${seefollower ? 'bg-indigo-50 ring-2 ring-indigo-100' : 'bg-gray-50 hover:bg-gray-100'}`}
+                  className={`text-center p-2 md:p-4 rounded-xl md:rounded-2xl transition-colors cursor-pointer ${seefollower ? 'bg-indigo-50 dark:bg-indigo-900/40 ring-2 ring-indigo-100 dark:ring-indigo-900' : 'bg-gray-50 dark:bg-neutral-800 hover:bg-gray-100 dark:hover:bg-neutral-700'}`}
                 >
-                  <span className="block text-2xl font-bold text-indigo-600">{followers.length}</span>
-                  <span className="text-gray-500 text-sm font-medium uppercase tracking-wide">Followers</span>
+                  <span className="block text-xl md:text-2xl font-bold text-indigo-600 dark:text-indigo-400">{followers.length}</span>
+                  <span className="text-gray-400 dark:text-neutral-500 text-[10px] md:text-sm font-medium uppercase tracking-wide">Followers</span>
                 </div>
                 <div
                   onClick={() => setseefollower(false)}
-                  className={`text-center p-4 rounded-2xl transition-colors cursor-pointer ${!seefollower ? 'bg-indigo-50 ring-2 ring-indigo-100' : 'bg-gray-50 hover:bg-gray-100'}`}
+                  className={`text-center p-2 md:p-4 rounded-xl md:rounded-2xl transition-colors cursor-pointer ${!seefollower ? 'bg-indigo-50 dark:bg-indigo-900/40 ring-2 ring-indigo-100 dark:ring-indigo-900' : 'bg-gray-50 dark:bg-neutral-800 hover:bg-gray-100 dark:hover:bg-neutral-700'}`}
                 >
-                  <span className="block text-2xl font-bold text-indigo-600">{following.length}</span>
-                  <span className="text-gray-500 text-sm font-medium uppercase tracking-wide">Following</span>
+                  <span className="block text-xl md:text-2xl font-bold text-indigo-600 dark:text-indigo-400">{following.length}</span>
+                  <span className="text-gray-400 dark:text-neutral-500 text-[10px] md:text-sm font-medium uppercase tracking-wide">Following</span>
                 </div>
               </div>
             </div>
           </div>
 
           {/* --- Post Creation Section --- */}
-          <div className="flex justify-end gap-3 flex-wrap">
+          <div className="flex justify-center md:justify-end gap-2 md:gap-3 flex-wrap">
             <button
               onClick={() => { setShortFormOpen(!shortFormOpen); setMomentFormOpen(false); setpost(false); }}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all"
+              className="flex items-center gap-2 px-4 md:px-6 py-2 md:py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white text-sm md:text-base font-bold rounded-xl md:rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all"
             >
-              <Video size={18} />
-              <span>Add Short</span>
+              <Video size={16} />
+              <span>Short</span>
             </button>
 
             <button
               onClick={() => { setMomentFormOpen(!momentFormOpen); setShortFormOpen(false); setpost(false); }}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-500 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all"
+              className="flex items-center gap-2 px-4 md:px-6 py-2 md:py-3 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-sm md:text-base font-bold rounded-xl md:rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all"
             >
-              <span>⏱️ Add Moment</span>
+              <span>⏱️ Moment</span>
             </button>
 
             <button
               onClick={() => { setpost(!post); setMomentFormOpen(false); setShortFormOpen(false); }}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all"
+              className="flex items-center gap-2 px-4 md:px-6 py-2 md:py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm md:text-base font-bold rounded-xl md:rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all"
             >
-              <span>✨ Create New Post</span>
+              <span>✨ Post</span>
             </button>
           </div>
 
@@ -447,7 +447,7 @@ const page = () => {
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-3xl shadow-xl p-8 border border-orange-100 mt-4"
+              className="bg-white dark:bg-neutral-900 rounded-3xl shadow-xl p-8 border border-orange-100 dark:border-orange-900 mt-4"
             >
               <form onSubmit={handleShortSubmit}>
                 <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-amber-500 mb-6 font-serif">Upload a Short 🎬</h2>
@@ -460,7 +460,7 @@ const page = () => {
                       onChange={handleShortChange}
                       name="caption"
                       placeholder="Give your Short a catchy title..."
-                      className="w-full px-4 py-3 bg-gray-50 rounded-xl border-0 focus:ring-2 focus:ring-orange-500 transition-all"
+                      className="w-full px-4 py-3 bg-gray-50 dark:bg-neutral-800 rounded-xl border-0 focus:ring-2 focus:ring-orange-500 transition-all text-gray-900 dark:text-white"
                     />
                   </div>
                 </div>
@@ -505,7 +505,7 @@ const page = () => {
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-3xl shadow-xl p-8 border border-pink-100"
+              className="bg-white dark:bg-neutral-900 rounded-3xl shadow-xl p-8 border border-pink-100 dark:border-pink-900"
             >
               <form onSubmit={handleMomentSubmit}>
                 <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-violet-500 mb-6 font-serif">Share a Moment ⏱️</h2>
@@ -518,7 +518,7 @@ const page = () => {
                       onChange={handleMomentChange}
                       name="caption"
                       placeholder="Add a snappy caption..."
-                      className="w-full px-4 py-3 bg-gray-50 rounded-xl border-0 focus:ring-2 focus:ring-pink-500 transition-all"
+                      className="w-full px-4 py-3 bg-gray-50 dark:bg-neutral-800 rounded-xl border-0 focus:ring-2 focus:ring-pink-500 transition-all text-gray-900 dark:text-white"
                     />
                   </div>
                 </div>
@@ -568,10 +568,10 @@ const page = () => {
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100"
+              className="bg-white dark:bg-neutral-900 rounded-3xl shadow-xl p-8 border border-gray-100 dark:border-neutral-800"
             >
               <form action={handleSubmit}>
-                <h2 className="text-2xl font-bold text-gray-800 mb-6 font-serif">Share your thoughts 💭</h2>
+                <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6 font-serif">Share your thoughts 💭</h2>
 
                 <textarea
                   value={Written_form.content || ""}
@@ -579,7 +579,7 @@ const page = () => {
                   name="content"
                   rows="4"
                   placeholder="What's making you laugh or think today?"
-                  className="w-full px-4 py-3 bg-gray-50 rounded-xl border-0 focus:ring-2 focus:ring-indigo-500 transition-all mb-4 text-gray-800 placeholder-gray-400"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-neutral-800 rounded-xl border-0 focus:ring-2 focus:ring-indigo-500 transition-all mb-4 text-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-neutral-500"
                   required
                 />
 
@@ -592,7 +592,7 @@ const page = () => {
                       onChange={handleChange}
                       name="caption"
                       placeholder="Add a witty caption..."
-                      className="w-full px-4 py-3 bg-gray-50 rounded-xl border-0 focus:ring-2 focus:ring-indigo-500 transition-all"
+                      className="w-full px-4 py-3 bg-gray-50 dark:bg-neutral-800 rounded-xl border-0 focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white"
                     />
                     <button
                       onClick={handleGenerate}
@@ -651,8 +651,8 @@ const page = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
             {/* Left Column: Your Posts */}
-            <div className="bg-white rounded-3xl shadow-lg p-6 border border-gray-100">
-              <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+            <div className="bg-white dark:bg-neutral-900 rounded-3xl shadow-lg p-6 border border-gray-100 dark:border-neutral-800">
+              <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2">
                 📝 Your Timeline
               </h2>
 
@@ -668,20 +668,20 @@ const page = () => {
                       whileInView={{ opacity: 1 }}
                       viewport={{ once: true }}
                       key={i}
-                      className="bg-gray-50 p-5 rounded-2xl hover:shadow-md transition-shadow border border-gray-100"
+                      className="bg-gray-50 dark:bg-neutral-800 p-5 rounded-2xl hover:shadow-md transition-shadow border border-gray-100 dark:border-neutral-700"
                     >
                       <div className="flex items-center gap-3 mb-3">
                         <img src={p.profilepic} className="w-10 h-10 rounded-full object-cover" alt="avatar" />
                         <div>
-                          <h4 className="font-bold text-gray-900">{p.user_name}</h4>
-                          <p className="text-xs text-gray-500">{p.institute_name}</p>
+                          <h4 className="font-bold text-gray-900 dark:text-white">{p.user_name}</h4>
+                          <p className="text-xs text-gray-500 dark:text-neutral-400">{p.institute_name}</p>
                         </div>
                       </div>
-                      <p className="text-gray-800 leading-relaxed mb-3">{p.content}</p>
+                      <p className="text-gray-800 dark:text-neutral-200 leading-relaxed mb-3">{p.content}</p>
 
                       {/* Media Rendering */}
                       {p.mediaType === 'image' && (
-                        <div className="rounded-xl overflow-hidden mb-3 border border-gray-100">
+                        <div className="rounded-xl overflow-hidden mb-3 border border-gray-100 dark:border-neutral-700">
                           <img src={p.mediaUrl} alt="Post media" className="w-full h-auto object-cover max-h-[500px]" />
                         </div>
                       )}
@@ -692,13 +692,13 @@ const page = () => {
                       )}
 
                       {p.caption && (
-                        <div className="pl-4 border-l-4 border-indigo-200 italic text-indigo-600 text-sm mb-3">
+                        <div className="pl-4 border-l-4 border-indigo-200 dark:border-indigo-900 italic text-indigo-600 dark:text-indigo-400 text-sm mb-3">
                           {p.caption}
                         </div>
                       )}
 
                       {/* --- SOCIAL BUTTONS --- */}
-                      <div className="flex items-center gap-4 mt-4 pt-3 border-t border-gray-200">
+                      <div className="flex items-center gap-4 mt-4 pt-3 border-t border-gray-200 dark:border-neutral-700">
                         {/* Like Button */}
                         <button
                           className="flex items-center gap-1.5 text-gray-500 transition-colors cursor-not-allowed opacity-60"
@@ -734,24 +734,24 @@ const page = () => {
                             {/* Comments List */}
                             <div className="space-y-3 mb-3 max-h-40 overflow-y-auto pr-1 custom-scrollbar">
                               {p.comments?.map((c, idx) => (
-                                <div key={idx} className="bg-white p-2 rounded-lg border border-gray-100 shadow-sm text-sm">
+                                <div key={idx} className="bg-white dark:bg-neutral-900 p-2 rounded-lg border border-gray-100 dark:border-neutral-800 shadow-sm text-sm">
                                   <div className="flex items-start gap-2">
                                     <img src={c.profilepic} className="w-6 h-6 rounded-full mt-1" alt="pic" />
                                     <div className="flex-1">
                                       <div className="flex justify-between items-start">
                                         <div>
-                                          <span className="font-bold text-gray-800 mr-2">{c.user_name}</span>
-                                          <span className="text-gray-600">{c.text}</span>
+                                          <span className="font-bold text-gray-800 dark:text-white mr-2">{c.user_name}</span>
+                                          <span className="text-gray-600 dark:text-neutral-400">{c.text}</span>
                                         </div>
                                         {/* Admin Reply Toggle */}
-                                        <button 
+                                        <button
                                           onClick={() => setActiveReplyBox(activeReplyBox === c._id ? null : c._id)}
                                           className="text-xs text-indigo-500 hover:text-indigo-700 font-semibold"
                                         >
                                           Reply
                                         </button>
                                       </div>
-                                      
+
                                       {/* Replies List */}
                                       {c.replies?.length > 0 && (
                                         <div className="mt-2 pl-3 border-l-2 border-indigo-100 space-y-2">
@@ -759,9 +759,9 @@ const page = () => {
                                             <div key={rIdx} className="flex items-start gap-2 text-xs">
                                               <img src={r.profilepic} className="w-4 h-4 rounded-full mt-0.5" alt="pic" />
                                               <div>
-                                                <span className="font-bold text-indigo-800 mr-1">{r.user_name}</span>
-                                                <span className="bg-indigo-100 text-indigo-800 text-[9px] px-1 rounded mr-2 font-bold tracking-wide">AUTHOR</span>
-                                                <span className="text-gray-600">{r.text}</span>
+                                                <span className="font-bold text-indigo-800 dark:text-indigo-400 mr-1">{r.user_name}</span>
+                                                <span className="bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 text-[9px] px-1 rounded mr-2 font-bold tracking-wide">AUTHOR</span>
+                                                <span className="text-gray-600 dark:text-neutral-400">{r.text}</span>
                                               </div>
                                             </div>
                                           ))}
@@ -774,7 +774,7 @@ const page = () => {
                                           <input
                                             type="text"
                                             placeholder="Write a reply..."
-                                            className="flex-1 px-2 py-1 bg-gray-50 border border-gray-200 rounded text-xs text-gray-900 focus:outline-none focus:border-indigo-400"
+                                            className="flex-1 px-2 py-1 bg-gray-50 dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded text-xs text-gray-900 dark:text-white focus:outline-none focus:border-indigo-400"
                                             value={replyInputs[c._id] || ''}
                                             onChange={(e) => setReplyInputs({ ...replyInputs, [c._id]: e.target.value })}
                                             onKeyDown={(e) => { if (e.key === 'Enter') onReply(p._id, c._id); e.stopPropagation(); }}
@@ -801,7 +801,7 @@ const page = () => {
                               <input
                                 type="text"
                                 placeholder="Write a comment..."
-                                className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-indigo-400 placeholder-gray-500"
+                                className="flex-1 px-3 py-2 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:border-indigo-400 placeholder-gray-500 dark:placeholder-neutral-500"
                                 value={commentInputs[p._id] || ''}
                                 onChange={(e) => setCommentInputs({ ...commentInputs, [p._id]: e.target.value })}
                                 onKeyDown={(e) => e.key === 'Enter' && onComment(p._id)}
@@ -824,21 +824,21 @@ const page = () => {
             </div>
 
             {/* Right Column: Toggles (Followers/Following) */}
-            <div className="bg-white rounded-3xl shadow-lg p-6 border border-gray-100 h-fit sticky top-6">
+            <div className="bg-white dark:bg-neutral-900 rounded-3xl shadow-lg p-6 border border-gray-100 dark:border-neutral-800 h-fit sticky top-6">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold text-gray-800">
+                <h2 className="text-xl font-bold text-gray-800 dark:text-white">
                   {seefollower ? '🌸 Followers' : '💫 Following'}
                 </h2>
-                <div className="flex bg-gray-100 p-1 rounded-xl">
+                <div className="flex bg-gray-100 dark:bg-neutral-800 p-1 rounded-xl">
                   <button
                     onClick={() => setseefollower(true)}
-                    className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${seefollower ? 'bg-white shadow text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
+                    className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${seefollower ? 'bg-white dark:bg-neutral-700 shadow text-indigo-600 dark:text-indigo-400' : 'text-gray-500 dark:text-neutral-400 hover:text-gray-700 dark:hover:text-white'}`}
                   >
                     Followers
                   </button>
                   <button
                     onClick={() => setseefollower(false)}
-                    className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${!seefollower ? 'bg-white shadow text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
+                    className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${!seefollower ? 'bg-white dark:bg-neutral-700 shadow text-indigo-600 dark:text-indigo-400' : 'text-gray-500 dark:text-neutral-400 hover:text-gray-700 dark:hover:text-white'}`}
                   >
                     Following
                   </button>
@@ -856,7 +856,7 @@ const page = () => {
                       <motion.div
                         key={i}
                         whileHover={{ scale: 1.02 }}
-                        className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl"
+                        className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-neutral-800 rounded-xl"
                       >
                         <img
                           src={user.sender_profilepic}
@@ -866,7 +866,7 @@ const page = () => {
                         <div className="min-w-0">
                           <Link
                             href={{ pathname: "/ViewFriends", query: { friend_email: user.sender_email, user_email: session.user.email } }}
-                            className="block font-semibold text-gray-900 truncate hover:text-indigo-600"
+                            className="block font-semibold text-gray-900 dark:text-white truncate hover:text-indigo-600 dark:hover:text-indigo-400"
                           >
                             {user.sender_username || user.sender_email.split('@')[0]}
                           </Link>

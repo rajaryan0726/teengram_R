@@ -4,10 +4,12 @@ import GitHubProvider from "next-auth/providers/github";
 import User from "@/models/User";
 
 import GoogleProvider from "next-auth/providers/google";
+import CredentialsProvider from "next-auth/providers/credentials";
 
 // Handle ESM/CJS interop for GitHubProvider
 const GithubProviderFunction = GitHubProvider.default || GitHubProvider;
 const GoogleProviderFunction = GoogleProvider.default || GoogleProvider;
+const CredentialsProviderFunction = CredentialsProvider.default || CredentialsProvider;
 
 export const authOptions = {
     providers: [
@@ -18,6 +20,29 @@ export const authOptions = {
         GoogleProviderFunction({
             clientId: process.env.GOOGLE_CLIENT_ID,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET
+        }),
+        CredentialsProviderFunction({
+            name: "Testing Login",
+            credentials: {
+                username: { label: "Username", type: "text" },
+                password: { label: "Password", type: "password" }
+            },
+            async authorize(credentials) {
+                await connectDb();
+                if (!credentials.username) return null;
+                
+                let user = await User.findOne({ username: credentials.username });
+                if (!user) {
+                    // Auto-provision a fake account for friends testing via tunnel
+                    user = await User.create({
+                        email: `${credentials.username.toLowerCase().replace(/\s/g, '')}@testing.com`,
+                        username: credentials.username.toLowerCase().replace(/\s/g, ''),
+                        name: credentials.username,
+                        profilepic: '/landing.png'
+                    });
+                }
+                return { id: user._id.toString(), email: user.email, name: user.name, image: user.profilepic };
+            }
         }),
     ],
     secret: process.env.NEXTAUTH_SECRET,

@@ -1,7 +1,10 @@
 'use client';
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { usePathname } from 'next/navigation'; // Import hook for active state
+import { useSession } from "next-auth/react";
+import { useSocket } from "../providers/SocketProvider";
+import { checkUnreadMessages } from "@/actions/useractions";
 
 import {
   Home,
@@ -24,6 +27,41 @@ const Sidebar = () => {
   const pathname = usePathname(); // Get current path
   const { theme, toggleTheme } = useTheme();
 
+  const { data: session } = useSession();
+  const { socket } = useSocket();
+  const [hasUnread, setHasUnread] = useState(false);
+
+  // Fetch initial unread count and listen for new live messages
+  useEffect(() => {
+    if (session?.user?.id) {
+      checkUnreadMessages(session.user.id).then(setHasUnread);
+
+      const onReceiveMessage = (msg) => {
+        // If the new message is NOT sent by us, illuminate the green dot
+        if (msg.sender?._id !== session.user.id) {
+            setHasUnread(true);
+        }
+      };
+
+      if (socket) {
+        socket.on('receive_message', onReceiveMessage);
+      }
+
+      return () => {
+        if (socket) {
+          socket.off('receive_message', onReceiveMessage);
+        }
+      };
+    }
+  }, [session?.user?.id, socket]);
+
+  // Clear unread dot automatically when navigating into the Chat page
+  useEffect(() => {
+    if (pathname.startsWith('/Chat')) {
+      setHasUnread(false);
+    }
+  }, [pathname]);
+
   const navItems = [
     { Icon: Home, label: "Home", path: "/" },
     { Icon: Search, label: "Search", path: "/search" },
@@ -39,7 +77,7 @@ const Sidebar = () => {
   return (
     <div
       className="hidden md:flex h-screen w-20 lg:w-64 flex-col justify-between py-6 px-3 lg:px-4
-                 bg-white dark:bg-black border-r border-gray-200 dark:border-neutral-800 shadow-sm z-50 transition-colors duration-300"
+                 bg-white dark:bg-black border-r border-gray-200 dark:border-neutral-800 shadow-sm z-50 overflow-y-auto scrollbar-hide transition-colors duration-300"
     >
       {/* Top Logo */}
       <div className="mb-8 flex items-center justify-center lg:justify-start lg:pl-4">
@@ -66,7 +104,7 @@ const Sidebar = () => {
                 }
                 `}
             >
-              <div className={`p-1 rounded-lg transition-colors ${isActive ? '' : 'group-hover:bg-white dark:group-hover:bg-transparent'}`}>
+              <div className={`relative p-1 rounded-lg transition-colors ${isActive ? '' : 'group-hover:bg-white dark:group-hover:bg-transparent'}`}>
                 {label === "Profile" ? (
                   <img
                     src="/landing.png"
@@ -75,6 +113,10 @@ const Sidebar = () => {
                   />
                 ) : (
                   <Icon className={`w-7 h-7 ${isActive ? 'stroke-[2.5px]' : 'stroke-2'}`} />
+                )}
+                {/* Notification Unread Dot */}
+                {label === "Messages" && hasUnread && (
+                    <span className="absolute top-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-white dark:border-black shadow-[0_0_10px_rgba(34,197,94,0.7)] animate-pulse"></span>
                 )}
               </div>
 

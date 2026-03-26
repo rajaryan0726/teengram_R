@@ -15,29 +15,89 @@ export default function CallModal({
   const [remoteStream, setRemoteStream] = useState(null);
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(!isVideoCall);
+  const [callDuration, setCallDuration] = useState(0);
+  const [iceState, setIceState] = useState('new');
+
+  useEffect(() => {
+    let interval;
+    if (callStatus === 'connected') {
+      interval = setInterval(() => {
+        setCallDuration((prev) => prev + 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [callStatus]);
+
+  const formatDuration = (seconds) => {
+    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+    const s = (seconds % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  };
 
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const peerConnection = useRef(null);
+  const iceCandidateQueue = useRef([]);
 
-  // STUN Servers for NAT Traversal
+  // Sync remote stream to video element whenever it changes
+  useEffect(() => {
+    if (remoteStream && remoteVideoRef.current) {
+        console.log("[WebRTC] Syncing remote stream to video element:", remoteStream.getTracks().map(t => `${t.kind}:${t.enabled}`));
+        remoteVideoRef.current.srcObject = remoteStream;
+    }
+  }, [remoteStream]);
+
+  // ICE/TURN Servers for NAT Traversal
+  // STUN alone CANNOT traverse symmetric NATs (common on mobile/different networks).
+  // TURN servers relay media when direct peer-to-peer is impossible.
   const rtcConfig = {
     iceServers: [
       { urls: 'stun:stun.l.google.com:19302' },
-      { urls: 'stun:stun1.l.google.com:19302' }
-    ]
+      { urls: 'stun:stun1.l.google.com:19302' },
+      {
+        urls: 'turn:openrelay.metered.ca:80',
+        username: 'openrelayproject',
+        credential: 'openrelayproject'
+      },
+      {
+        urls: 'turn:openrelay.metered.ca:443',
+        username: 'openrelayproject',
+        credential: 'openrelayproject'
+      },
+      {
+        urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+        username: 'openrelayproject',
+        credential: 'openrelayproject'
+      }
+    ],
+    iceCandidatePoolSize: 10
   };
 
   useEffect(() => {
     // 1. Get User Media
+    const flushIceCandidateQueue = async () => {
+      if (!peerConnection.current) return;
+      console.log(`[WebRTC] Flushing ${iceCandidateQueue.current.length} queued ICE candidates`);
+      for (const candidate of iceCandidateQueue.current) {
+        try {
+          await peerConnection.current.addIceCandidate(new RTCIceCandidate(candidate));
+        } catch (e) {
+          console.error('[WebRTC] Error adding queued ice candidate', e);
+        }
+      }
+      iceCandidateQueue.current = [];
+    };
+
     const initMedia = async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: true, // Always request video, we can disable track later
+          video: true,
           audio: true
         });
         
-        // If it's pure audio call initially, disable video track to start with black screen
+        console.log("[WebRTC] Got local media:", stream.getTracks().map(t => `${t.kind}:${t.enabled}`));
+
+        // If it's pure audio call initially, disable video track
         if (!isVideoCall) {
             stream.getVideoTracks().forEach(track => track.enabled = false);
         }
@@ -54,14 +114,25 @@ export default function CallModal({
           setCallStatus('ringing');
           const offer = await peerConnection.current.createOffer();
           await peerConnection.current.setLocalDescription(offer);
+          console.log("[WebRTC] Offer created and sent to:", outgoingCallTarget._id);
           socket.emit('call_offer', {
             recipientId: outgoingCallTarget._id,
             offer,
-            callerInfo: { _id: currentUserId, isVideoCall } // Pass simplified caller info
+            callerInfo: { _id: currentUserId, isVideoCall }
           });
+        } 
+        // If answering an incoming call
+        else if (incomingCall) {
+          console.log("[WebRTC] Answering incoming call from:", incomingCall.callerInfo._id);
+          await peerConnection.current.setRemoteDescription(new RTCSessionDescription(incomingCall.offer));
+          const answer = await peerConnection.current.createAnswer();
+          await peerConnection.current.setLocalDescription(answer);
+          socket.emit('call_answer', { callerId: incomingCall.callerInfo._id, answer });
+          setCallStatus('connected');
+          await flushIceCandidateQueue();
         }
       } catch (err) {
-        console.error("Failed to get local media", err);
+        console.error("[WebRTC] Failed to get local media", err);
         alert("Camera/Microphone access denied. Cannot start call.");
         handleEndCall();
       }
@@ -75,43 +146,100 @@ export default function CallModal({
   }, []);
 
   const initializePeerConnection = (stream) => {
-    peerConnection.current = new RTCPeerConnection(rtcConfig);
+    const pc = new RTCPeerConnection(rtcConfig);
+    peerConnection.current = pc;
 
     // Add local tracks
     stream.getTracks().forEach(track => {
-      peerConnection.current.addTrack(track, stream);
+      pc.addTrack(track, stream);
+      console.log(`[WebRTC] Added local track: ${track.kind}, enabled: ${track.enabled}`);
     });
 
     // Handle incoming remote tracks
-    peerConnection.current.ontrack = (event) => {
-      setRemoteStream(event.streams[0]);
+    pc.ontrack = (event) => {
+      console.log("[WebRTC] ontrack fired. Streams:", event.streams.length, "Track:", event.track.kind);
+      const remStream = event.streams[0] || new MediaStream([event.track]);
+      setRemoteStream(remStream);
       if (remoteVideoRef.current) {
-        remoteVideoRef.current.srcObject = event.streams[0];
+        remoteVideoRef.current.srcObject = remStream;
       }
     };
 
     // Handle ICE Candidates
-    peerConnection.current.onicecandidate = (event) => {
+    pc.onicecandidate = (event) => {
       if (event.candidate) {
         const targetId = outgoingCallTarget ? outgoingCallTarget._id : incomingCall.callerInfo._id;
         socket.emit('ice_candidate', { targetId, candidate: event.candidate });
+      } else {
+        console.log("[WebRTC] ICE candidate gathering complete.");
+      }
+    };
+
+    // Monitor ICE connection state changes
+    pc.oniceconnectionstatechange = () => {
+      const state = pc.iceConnectionState;
+      console.log("[WebRTC] ICE Connection State:", state);
+      setIceState(state);
+      if (state === 'connected' || state === 'completed') {
+        setCallStatus('connected');
+      } else if (state === 'failed') {
+        console.error("[WebRTC] ICE Connection FAILED. Peers cannot reach each other.");
+        alert("Call connection failed. The network may be blocking peer-to-peer connections.");
+        handleEndCall();
+      } else if (state === 'disconnected') {
+        console.warn("[WebRTC] ICE Connection disconnected. May recover...");
+      }
+    };
+
+    // Monitor overall connection state
+    pc.onconnectionstatechange = () => {
+      console.log("[WebRTC] Connection State:", pc.connectionState);
+      if (pc.connectionState === 'failed') {
+        console.error("[WebRTC] Peer connection FAILED.");
+        handleEndCall();
       }
     };
   };
 
   useEffect(() => {
-    if (!socket || !peerConnection.current) return;
+    if (!socket) return;
 
     const handleCallAnswered = async ({ answer }) => {
-      await peerConnection.current.setRemoteDescription(new RTCSessionDescription(answer));
-      setCallStatus('connected');
+      if (peerConnection.current) {
+         const state = peerConnection.current.signalingState;
+         console.log("[WebRTC] Received call_answered. Signaling state:", state);
+         if (state === 'have-local-offer') {
+           try {
+             await peerConnection.current.setRemoteDescription(new RTCSessionDescription(answer));
+             setCallStatus('connected');
+             
+             // Flush any ICE candidates that arrived before the Handshake finished
+             for (const candidate of iceCandidateQueue.current) {
+                try {
+                  await peerConnection.current.addIceCandidate(new RTCIceCandidate(candidate));
+                } catch (e) {}
+             }
+             iceCandidateQueue.current = [];
+             console.log("[WebRTC] Remote answer set. Handshake complete!");
+           } catch (err) {
+             console.error("[WebRTC] Error setting remote answer:", err);
+           }
+         } else {
+           console.warn("[WebRTC] Ignoring call_answered in state:", state);
+         }
+      }
     };
 
     const handleReceiveIceCandidate = async ({ candidate }) => {
       try {
-        await peerConnection.current.addIceCandidate(new RTCIceCandidate(candidate));
+        if (peerConnection.current && peerConnection.current.remoteDescription) {
+          await peerConnection.current.addIceCandidate(new RTCIceCandidate(candidate));
+        } else {
+          iceCandidateQueue.current.push(candidate);
+          console.log("[WebRTC] Queued ICE candidate. Queue size:", iceCandidateQueue.current.length);
+        }
       } catch (e) {
-        console.error('Error adding received ice candidate', e);
+        console.error('[WebRTC] Error adding received ice candidate', e);
       }
     };
 
@@ -139,19 +267,7 @@ export default function CallModal({
     };
   }, [socket]);
 
-  // If this modal is opened because of an incoming call, we need to answer it directly
-  useEffect(() => {
-    if (incomingCall && peerConnection.current && callStatus === 'initiating') {
-      const answerIncoming = async () => {
-        setCallStatus('connected');
-        await peerConnection.current.setRemoteDescription(new RTCSessionDescription(incomingCall.offer));
-        const answer = await peerConnection.current.createAnswer();
-        await peerConnection.current.setLocalDescription(answer);
-        socket.emit('call_answer', { callerId: incomingCall.callerInfo._id, answer });
-      };
-      answerIncoming();
-    }
-  }, [incomingCall, peerConnection.current]);
+
 
   const toggleMute = () => {
     if (localStream) {
@@ -199,25 +315,23 @@ export default function CallModal({
         </h2>
         <p className="text-white/60">
           {callStatus === 'ringing' ? 'Calling...' : 
-           callStatus === 'connected' ? 'Connected 00:00' : 'Connecting...'}
+           callStatus === 'connected' ? `Connected ${formatDuration(callDuration)}` : 'Connecting...'}
         </p>
       </div>
 
       {/* Video Streams */}
       <div className="flex-1 relative">
-        {/* Remote Video (Full Screen) */}
-        {remoteStream && (
-          <video 
-            ref={remoteVideoRef} 
-            autoPlay 
-            playsInline 
-            className="w-full h-full object-cover" 
-          />
-        )}
+        {/* Remote Video (Permanently Mounted for Ref Assignment) */}
+        <video 
+          ref={remoteVideoRef} 
+          autoPlay 
+          playsInline 
+          className={`w-full h-full object-cover ${!remoteStream ? 'hidden' : ''}`} 
+        />
         
         {/* Fallback if no remote video */}
         {!remoteStream && (
-           <div className="w-full h-full flex items-center justify-center">
+           <div className="w-full h-full flex items-center justify-center absolute inset-0">
              <div className="w-32 h-32 rounded-full border-4 border-white/20 flex items-center justify-center">
                 <span className="text-white/40 font-bold text-4xl">Waiting</span>
              </div>

@@ -3,6 +3,7 @@ import "./globals.css";
 import SessionWrapper from "./Components/SessionWrapper";
 import { ThemeProvider } from "./Components/ThemeProvider";
 import SocketProvider from "./providers/SocketProvider";
+import BottomNavbar from "./Components/BottomNavbar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,6 +30,7 @@ export default function RootLayout({ children }) {
           <SessionWrapper> 
             <SocketProvider>
               {children}
+              <BottomNavbar />
             </SocketProvider>
           </SessionWrapper>
         </ThemeProvider>
