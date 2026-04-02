@@ -147,7 +147,7 @@ const SearchPage = () => {
         return (
             <button
                 onClick={() => sendRequest(email)}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-lg font-medium shadow-md hover:shadow-lg hover:scale-105 transition-all"
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-600 text-white rounded-lg font-medium shadow-md hover:shadow-lg hover:scale-105 transition-all"
             >
                 <UserPlus size={18} />
                 <span>Add Friend</span>
@@ -164,27 +164,27 @@ const SearchPage = () => {
 
                     {/* Header & Search Input */}
                     <div className="bg-white dark:bg-neutral-900 rounded-2xl lg:rounded-3xl shadow-xl p-4 lg:p-8 border border-white/20 dark:border-neutral-800 backdrop-blur-xl">
-                        <h1 className="text-2xl lg:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-600 to-pink-500 mb-1 lg:mb-2 text-center lg:text-left">
+                        <h1 className="text-2xl lg:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-500 mb-1 lg:mb-2 text-center lg:text-left">
                             Find Friends 🔍
                         </h1>
                         <p className="hidden md:block text-gray-500 dark:text-neutral-400 mb-8">Search for people by name or @username to connect.</p>
 
                         <div className="relative group mt-4 lg:mt-0">
                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                <SearchIcon className="h-5 w-5 lg:h-6 lg:w-6 text-gray-400 group-focus-within:text-violet-500 transition-colors" />
+                                <SearchIcon className="h-5 w-5 lg:h-6 lg:w-6 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
                             </div>
                             <input
                                 type="text"
                                 className="block w-full pl-10 lg:pl-12 pr-4 py-3 lg:py-4 bg-gray-50 dark:bg-neutral-800 border-2 border-gray-100 dark:border-neutral-700 rounded-xl lg:rounded-2xl 
-                                           text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-violet-500 
-                                           focus:ring-4 focus:ring-violet-500/10 transition-all text-base lg:text-lg font-medium"
+                                           text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 
+                                           focus:ring-4 focus:ring-blue-500/10 transition-all text-base lg:text-lg font-medium"
                                 placeholder="Search friends..."
                                 value={query}
                                 onChange={handleSearch}
                             />
                             {isLoading && (
                                 <div className="absolute inset-y-0 right-4 flex items-center">
-                                    <div className="animate-spin rounded-full h-4 w-4 lg:h-5 lg:w-5 border-b-2 border-violet-600"></div>
+                                    <div className="animate-spin rounded-full h-4 w-4 lg:h-5 lg:w-5 border-b-2 border-blue-600"></div>
                                 </div>
                             )}
                         </div>
@@ -201,7 +201,7 @@ const SearchPage = () => {
                                     className="bg-white dark:bg-neutral-900 rounded-2xl shadow-md p-3 lg:p-6 flex flex-col items-center border border-gray-100 dark:border-neutral-800 hover:shadow-xl transition-shadow"
                                 >
                                     <Link href={{ pathname: '/ViewFriends', query: { friend_email: user.email, user_email: session.user.email } }} className="w-full flex flex-col items-center cursor-pointer">
-                                        <div className="w-16 h-16 lg:w-24 lg:h-24 rounded-full p-1 bg-gradient-to-tr from-violet-500 to-pink-500 mb-2 lg:mb-4 transition-transform hover:scale-105">
+                                        <div className="w-16 h-16 lg:w-24 lg:h-24 rounded-full p-1 bg-gradient-to-tr from-blue-500 to-blue-500 mb-2 lg:mb-4 transition-transform hover:scale-105">
                                             <img
                                                 src={user.profilepic || "https://via.placeholder.com/150"}
                                                 alt={user.name}
@@ -209,8 +209,8 @@ const SearchPage = () => {
                                             />
                                         </div>
 
-                                        <h3 className="text-base lg:text-xl font-bold text-gray-900 dark:text-white text-center truncate w-full hover:text-violet-600 transition-colors">{user.name}</h3>
-                                        <p className="text-violet-600 font-medium text-xs lg:text-sm mb-2 lg:mb-4">@{user.username}</p>
+                                        <h3 className="text-base lg:text-xl font-bold text-gray-900 dark:text-white text-center truncate w-full hover:text-blue-600 transition-colors">{user.name}</h3>
+                                        <p className="text-blue-600 font-medium text-xs lg:text-sm mb-2 lg:mb-4">@{user.username}</p>
 
                                         {user.institute_name && (
                                             <p className="hidden md:block text-gray-500 text-xs mb-4 text-center line-clamp-1">{user.institute_name}</p>

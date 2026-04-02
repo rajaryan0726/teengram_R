@@ -275,7 +275,7 @@ const ChatView = ({ activeChat, currentUserId, onBack, onStartCall }) => {
         return (
             <div className="flex-1 w-full h-full flex items-center justify-center bg-gray-50/30">
                 <div className="text-center p-8 rounded-3xl shadow-xl bg-white/70 backdrop-blur-md border border-white">
-                    <div className="w-20 h-20 bg-gradient-to-tr from-violet-200 to-fuchsia-200 rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce">
+                    <div className="w-20 h-20 bg-gradient-to-tr from-blue-200 to-cyan-200 rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce">
                         <span className="text-4xl">👋</span>
                     </div>
                     <p className="text-2xl font-bold mb-3 text-gray-800">Welcome to TeenGram!</p>
@@ -315,7 +315,7 @@ const ChatView = ({ activeChat, currentUserId, onBack, onStartCall }) => {
 
                     <div className="min-w-0">
                         <h2 className="text-base md:text-xl font-bold text-gray-900 dark:text-white leading-tight truncate max-w-[120px] md:max-w-none">{chatPartnerName}</h2>
-                        <p className={`text-[10px] md:text-sm font-medium transition-all ${typingUser ? 'text-violet-600' : isOnline ? 'text-green-600' : 'text-gray-400'}`}>
+                        <p className={`text-[10px] md:text-sm font-medium transition-all ${typingUser ? 'text-blue-600' : isOnline ? 'text-green-600' : 'text-gray-400'}`}>
                             {typingUser ? "typing..." : isOnline ? "Active now" : "Offline"}
                         </p>
                     </div>
@@ -324,13 +324,13 @@ const ChatView = ({ activeChat, currentUserId, onBack, onStartCall }) => {
                 <div className="flex gap-1 md:gap-2 text-gray-400 flex-shrink-0">
                     <button 
                         onClick={() => { setIsSelectMode(!isSelectMode); setSelectedMessages(new Set()); }}
-                        className={`p-2 md:p-3 rounded-xl transition-all ${isSelectMode ? 'bg-red-100 text-red-600' : 'hover:bg-violet-50 hover:text-violet-600'}`}
+                        className={`p-2 md:p-3 rounded-xl transition-all ${isSelectMode ? 'bg-red-100 text-red-600' : 'hover:bg-blue-50 hover:text-blue-600'}`}
                     >
                         {isSelectMode ? <X className="w-5 h-5" /> : <Trash2 className="w-5 h-5 flex-shrink-0" />}
                     </button>
-                    <button onClick={() => isOnline ? onStartCall(false) : alert("User is offline")} className="p-2 md:p-3 hover:bg-violet-50 hover:text-violet-600 rounded-xl transition-all"><Phone className="w-5 h-5" /></button>
-                    <button onClick={() => isOnline ? onStartCall(true) : alert("User is offline")} className="p-2 md:p-3 hover:bg-violet-50 hover:text-violet-600 rounded-xl transition-all"><Video className="w-5 h-5" /></button>
-                    <button className="hidden md:block p-2 md:p-3 hover:bg-violet-50 hover:text-violet-600 rounded-xl transition-all"><MoreVertical className="w-5 h-5" /></button>
+                    <button onClick={() => isOnline ? onStartCall(false) : alert("User is offline")} className="p-2 md:p-3 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all"><Phone className="w-5 h-5" /></button>
+                    <button onClick={() => isOnline ? onStartCall(true) : alert("User is offline")} className="p-2 md:p-3 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all"><Video className="w-5 h-5" /></button>
+                    <button className="hidden md:block p-2 md:p-3 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all"><MoreVertical className="w-5 h-5" /></button>
                 </div>
             </div>
 
@@ -388,17 +388,17 @@ const ChatView = ({ activeChat, currentUserId, onBack, onStartCall }) => {
                                     ${isSelectMode && !isDeletable ? 'opacity-60 cursor-not-allowed grayscale' : ''}
                                     ${isSelectMode && selectedMessages.has(message._id) ? 'ring-4 ring-red-400 opacity-90 scale-95' : ''}
                                     ${isMe
-                                        ? 'bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white rounded-br-sm shadow-violet-200 dark:shadow-none'
+                                        ? 'bg-gradient-to-br from-blue-600 to-cyan-600 text-white rounded-br-sm shadow-blue-200 dark:shadow-none'
                                         : 'bg-white dark:bg-neutral-900 text-gray-800 dark:text-gray-100 rounded-bl-sm border border-gray-100 dark:border-neutral-800 hover:shadow-md dark:shadow-none'
                                     }
                                 `}
                             >
                                 {/* Display sender name for group chats */}
-                                {!isMe && activeChat.isGroup && <p className="text-xs font-bold mb-1 text-violet-500">{senderName}</p>}
+                                {!isMe && activeChat.isGroup && <p className="text-xs font-bold mb-1 text-blue-500">{senderName}</p>}
 
                                 <p>{message.content}</p>
 
-                                <div className={`flex items-center justify-end mt-1 space-x-1 opacity-80 ${isMe ? 'text-violet-100' : 'text-gray-400'}`}>
+                                <div className={`flex items-center justify-end mt-1 space-x-1 opacity-80 ${isMe ? 'text-blue-100' : 'text-gray-400'}`}>
                                     <span className="text-[10px] font-medium">
                                         {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                     </span>
@@ -443,7 +443,7 @@ const ChatView = ({ activeChat, currentUserId, onBack, onStartCall }) => {
                                 className={`px-4 md:px-5 py-2 md:py-2.5 text-sm md:text-base rounded-xl font-bold text-white flex items-center gap-2 shadow-lg transition-all
                                     ${selectedMessages.size === 0 
                                         ? 'bg-red-300 shadow-none cursor-default' 
-                                        : 'bg-gradient-to-r from-red-500 to-rose-600 hover:shadow-red-200 hover:scale-105 active:scale-95'
+                                        : 'bg-gradient-to-r from-red-500 to-cyan-600 hover:shadow-red-200 hover:scale-105 active:scale-95'
                                     }`}
                             >
                                 <Trash2 className="w-4 h-4 md:w-5 md:h-5" />
@@ -453,11 +453,11 @@ const ChatView = ({ activeChat, currentUserId, onBack, onStartCall }) => {
                     </div>
                 ) : (
                     <div className="flex gap-2 md:gap-3 items-end max-w-5xl mx-auto">
-                        <button className="p-2 md:p-3 text-gray-400 hover:text-violet-500 hover:bg-violet-50 dark:hover:bg-neutral-800 rounded-full transition-all">
+                        <button className="p-2 md:p-3 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-neutral-800 rounded-full transition-all">
                             <span className="text-xl md:text-2xl">📎</span>
                         </button>
 
-                        <div className="flex-1 bg-gray-50 dark:bg-neutral-900 rounded-2xl md:rounded-3xl border border-gray-200 dark:border-neutral-800 focus-within:ring-2 focus-within:ring-violet-500/20 focus-within:border-violet-500 transition-all flex items-center px-3 md:px-4 py-0.5 md:py-1 shadow-inner dark:shadow-none">
+                        <div className="flex-1 bg-gray-50 dark:bg-neutral-900 rounded-2xl md:rounded-3xl border border-gray-200 dark:border-neutral-800 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all flex items-center px-3 md:px-4 py-0.5 md:py-1 shadow-inner dark:shadow-none">
                             <input
                                 type="text"
                                 placeholder="Type a message..."
@@ -475,7 +475,7 @@ const ChatView = ({ activeChat, currentUserId, onBack, onStartCall }) => {
                             className={`p-2.5 md:p-3.5 rounded-full shadow-lg transition-all duration-200 flex items-center justify-center
                                 ${!inputContent.trim()
                                     ? 'bg-gray-200 text-gray-400 shadow-none cursor-default'
-                                    : 'bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white shadow-violet-200 hover:shadow-violet-400 hover:scale-105 active:scale-95'
+                                    : 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-blue-200 hover:shadow-blue-400 hover:scale-105 active:scale-95'
                                 }`}
                         >
                             <Send className="w-4 h-4 md:w-5 md:h-5 ml-0.5" />

@@ -332,7 +332,7 @@ const page = () => {
           {/* --- Profile Header Card --- */}
           <div className="bg-white dark:bg-neutral-900 rounded-2xl md:rounded-3xl shadow-xl overflow-hidden relative">
             {/* Background Banner */}
-            <div className="h-24 md:h-32 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
+            <div className="h-24 md:h-32 bg-gradient-to-r from-blue-500 via-blue-500 to-blue-500"></div>
 
             <div className="px-4 md:px-8 pb-6 md:pb-8">
               <div className="relative flex flex-col items-center md:items-end md:flex-row -mt-10 md:-mt-12 mb-4 md:mb-6 gap-4 md:gap-6">
@@ -362,7 +362,7 @@ const page = () => {
                       <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">{form.name || "User Name"}</h1>
                       <p className="text-gray-500 dark:text-neutral-400 font-medium">@{form.username || "username"}</p>
                       {form.institute_name && (
-                        <p className="text-xs md:text-sm text-indigo-600 dark:text-indigo-400 font-medium mt-1">{form.institute_name} {form.university ? `• ${form.university}` : ''}</p>
+                        <p className="text-xs md:text-sm text-blue-600 dark:text-blue-400 font-medium mt-1">{form.institute_name} {form.university ? `• ${form.university}` : ''}</p>
                       )}
                     </div>
 
@@ -396,22 +396,22 @@ const page = () => {
 
               {/* Stats Bar */}
               <div className="grid grid-cols-3 gap-2 md:gap-4 border-t border-gray-100 dark:border-neutral-800 pt-4 md:pt-6">
-                <div className="text-center p-2 md:p-4 rounded-xl md:rounded-2xl bg-gray-50 dark:bg-neutral-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors cursor-pointer">
-                  <span className="block text-xl md:text-2xl font-bold text-indigo-600 dark:text-indigo-400">{written_post.length}</span>
+                <div className="text-center p-2 md:p-4 rounded-xl md:rounded-2xl bg-gray-50 dark:bg-neutral-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors cursor-pointer">
+                  <span className="block text-xl md:text-2xl font-bold text-blue-600 dark:text-blue-400">{written_post.length}</span>
                   <span className="text-gray-400 dark:text-neutral-500 text-[10px] md:text-sm font-medium uppercase tracking-wide">Posts</span>
                 </div>
                 <div
                   onClick={() => setseefollower(true)}
-                  className={`text-center p-2 md:p-4 rounded-xl md:rounded-2xl transition-colors cursor-pointer ${seefollower ? 'bg-indigo-50 dark:bg-indigo-900/40 ring-2 ring-indigo-100 dark:ring-indigo-900' : 'bg-gray-50 dark:bg-neutral-800 hover:bg-gray-100 dark:hover:bg-neutral-700'}`}
+                  className={`text-center p-2 md:p-4 rounded-xl md:rounded-2xl transition-colors cursor-pointer ${seefollower ? 'bg-blue-50 dark:bg-blue-900/40 ring-2 ring-blue-100 dark:ring-blue-900' : 'bg-gray-50 dark:bg-neutral-800 hover:bg-gray-100 dark:hover:bg-neutral-700'}`}
                 >
-                  <span className="block text-xl md:text-2xl font-bold text-indigo-600 dark:text-indigo-400">{followers.length}</span>
+                  <span className="block text-xl md:text-2xl font-bold text-blue-600 dark:text-blue-400">{followers.length}</span>
                   <span className="text-gray-400 dark:text-neutral-500 text-[10px] md:text-sm font-medium uppercase tracking-wide">Followers</span>
                 </div>
                 <div
                   onClick={() => setseefollower(false)}
-                  className={`text-center p-2 md:p-4 rounded-xl md:rounded-2xl transition-colors cursor-pointer ${!seefollower ? 'bg-indigo-50 dark:bg-indigo-900/40 ring-2 ring-indigo-100 dark:ring-indigo-900' : 'bg-gray-50 dark:bg-neutral-800 hover:bg-gray-100 dark:hover:bg-neutral-700'}`}
+                  className={`text-center p-2 md:p-4 rounded-xl md:rounded-2xl transition-colors cursor-pointer ${!seefollower ? 'bg-blue-50 dark:bg-blue-900/40 ring-2 ring-blue-100 dark:ring-blue-900' : 'bg-gray-50 dark:bg-neutral-800 hover:bg-gray-100 dark:hover:bg-neutral-700'}`}
                 >
-                  <span className="block text-xl md:text-2xl font-bold text-indigo-600 dark:text-indigo-400">{following.length}</span>
+                  <span className="block text-xl md:text-2xl font-bold text-blue-600 dark:text-blue-400">{following.length}</span>
                   <span className="text-gray-400 dark:text-neutral-500 text-[10px] md:text-sm font-medium uppercase tracking-wide">Following</span>
                 </div>
               </div>
@@ -422,7 +422,7 @@ const page = () => {
           <div className="flex justify-center md:justify-end gap-2 md:gap-3 flex-wrap">
             <button
               onClick={() => { setShortFormOpen(!shortFormOpen); setMomentFormOpen(false); setpost(false); }}
-              className="flex items-center gap-2 px-4 md:px-6 py-2 md:py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white text-sm md:text-base font-bold rounded-xl md:rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all"
+              className="flex items-center gap-2 px-4 md:px-6 py-2 md:py-3 bg-gradient-to-r from-sky-500 to-sky-500 text-white text-sm md:text-base font-bold rounded-xl md:rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all"
             >
               <Video size={16} />
               <span>Short</span>
@@ -430,14 +430,14 @@ const page = () => {
 
             <button
               onClick={() => { setMomentFormOpen(!momentFormOpen); setShortFormOpen(false); setpost(false); }}
-              className="flex items-center gap-2 px-4 md:px-6 py-2 md:py-3 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-sm md:text-base font-bold rounded-xl md:rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all"
+              className="flex items-center gap-2 px-4 md:px-6 py-2 md:py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white text-sm md:text-base font-bold rounded-xl md:rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all"
             >
               <span>⏱️ Moment</span>
             </button>
 
             <button
               onClick={() => { setpost(!post); setMomentFormOpen(false); setShortFormOpen(false); }}
-              className="flex items-center gap-2 px-4 md:px-6 py-2 md:py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm md:text-base font-bold rounded-xl md:rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all"
+              className="flex items-center gap-2 px-4 md:px-6 py-2 md:py-3 bg-gradient-to-r from-blue-600 to-blue-600 text-white text-sm md:text-base font-bold rounded-xl md:rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all"
             >
               <span>✨ Post</span>
             </button>
@@ -447,10 +447,10 @@ const page = () => {
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white dark:bg-neutral-900 rounded-3xl shadow-xl p-8 border border-orange-100 dark:border-orange-900 mt-4"
+              className="bg-white dark:bg-neutral-900 rounded-3xl shadow-xl p-8 border border-sky-100 dark:border-sky-900 mt-4"
             >
               <form onSubmit={handleShortSubmit}>
-                <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-amber-500 mb-6 font-serif">Upload a Short 🎬</h2>
+                <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-sky-500 to-sky-500 mb-6 font-serif">Upload a Short 🎬</h2>
                 <p className="text-gray-500 text-sm mb-4">Shorts must be videos under 1 minute.</p>
 
                 <div className="flex flex-col md:flex-row gap-4">
@@ -460,7 +460,7 @@ const page = () => {
                       onChange={handleShortChange}
                       name="caption"
                       placeholder="Give your Short a catchy title..."
-                      className="w-full px-4 py-3 bg-gray-50 dark:bg-neutral-800 rounded-xl border-0 focus:ring-2 focus:ring-orange-500 transition-all text-gray-900 dark:text-white"
+                      className="w-full px-4 py-3 bg-gray-50 dark:bg-neutral-800 rounded-xl border-0 focus:ring-2 focus:ring-sky-500 transition-all text-gray-900 dark:text-white"
                     />
                   </div>
                 </div>
@@ -481,7 +481,7 @@ const page = () => {
 
                 <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-100">
                   <div className="flex gap-2">
-                    <label className="flex items-center gap-2 px-4 py-2 bg-gray-50 text-gray-600 rounded-xl cursor-pointer hover:bg-orange-50 hover:text-orange-600 transition-colors">
+                    <label className="flex items-center gap-2 px-4 py-2 bg-gray-50 text-gray-600 rounded-xl cursor-pointer hover:bg-sky-50 hover:text-sky-600 transition-colors">
                       <Video size={20} />
                       <span className="text-sm font-semibold">Select Video</span>
                       <input
@@ -493,7 +493,7 @@ const page = () => {
                     </label>
                   </div>
 
-                  <button type="submit" className="px-8 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold rounded-xl hover:shadow-lg transition-all shadow-md">
+                  <button type="submit" className="px-8 py-3 bg-gradient-to-r from-sky-500 to-sky-500 text-white font-bold rounded-xl hover:shadow-lg transition-all shadow-md">
                     Upload Short
                   </button>
                 </div>
@@ -505,10 +505,10 @@ const page = () => {
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white dark:bg-neutral-900 rounded-3xl shadow-xl p-8 border border-pink-100 dark:border-pink-900"
+              className="bg-white dark:bg-neutral-900 rounded-3xl shadow-xl p-8 border border-blue-100 dark:border-blue-900"
             >
               <form onSubmit={handleMomentSubmit}>
-                <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-violet-500 mb-6 font-serif">Share a Moment ⏱️</h2>
+                <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-blue-500 mb-6 font-serif">Share a Moment ⏱️</h2>
                 <p className="text-gray-500 text-sm mb-4">Moments disappear automatically after 24 hours.</p>
 
                 <div className="flex flex-col md:flex-row gap-4">
@@ -518,7 +518,7 @@ const page = () => {
                       onChange={handleMomentChange}
                       name="caption"
                       placeholder="Add a snappy caption..."
-                      className="w-full px-4 py-3 bg-gray-50 dark:bg-neutral-800 rounded-xl border-0 focus:ring-2 focus:ring-pink-500 transition-all text-gray-900 dark:text-white"
+                      className="w-full px-4 py-3 bg-gray-50 dark:bg-neutral-800 rounded-xl border-0 focus:ring-2 focus:ring-blue-500 transition-all text-gray-900 dark:text-white"
                     />
                   </div>
                 </div>
@@ -544,7 +544,7 @@ const page = () => {
 
                 <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-100">
                   <div className="flex gap-2">
-                    <label className="flex items-center gap-2 px-4 py-2 bg-gray-50 text-gray-600 rounded-xl cursor-pointer hover:bg-pink-50 hover:text-pink-600 transition-colors">
+                    <label className="flex items-center gap-2 px-4 py-2 bg-gray-50 text-gray-600 rounded-xl cursor-pointer hover:bg-blue-50 hover:text-blue-600 transition-colors">
                       <ImageIcon size={20} />
                       <span className="text-sm font-semibold">Photo/Video</span>
                       <input
@@ -556,7 +556,7 @@ const page = () => {
                     </label>
                   </div>
 
-                  <button type="submit" className="px-8 py-3 bg-gradient-to-r from-pink-500 to-rose-500 text-white font-bold rounded-xl hover:shadow-lg transition-all shadow-md">
+                  <button type="submit" className="px-8 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-bold rounded-xl hover:shadow-lg transition-all shadow-md">
                     Upload Moment
                   </button>
                 </div>
@@ -579,7 +579,7 @@ const page = () => {
                   name="content"
                   rows="4"
                   placeholder="What's making you laugh or think today?"
-                  className="w-full px-4 py-3 bg-gray-50 dark:bg-neutral-800 rounded-xl border-0 focus:ring-2 focus:ring-indigo-500 transition-all mb-4 text-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-neutral-500"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-neutral-800 rounded-xl border-0 focus:ring-2 focus:ring-blue-500 transition-all mb-4 text-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-neutral-500"
                   required
                 />
 
@@ -592,12 +592,12 @@ const page = () => {
                       onChange={handleChange}
                       name="caption"
                       placeholder="Add a witty caption..."
-                      className="w-full px-4 py-3 bg-gray-50 dark:bg-neutral-800 rounded-xl border-0 focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white"
+                      className="w-full px-4 py-3 bg-gray-50 dark:bg-neutral-800 rounded-xl border-0 focus:ring-2 focus:ring-blue-500 transition-all text-gray-900 dark:text-white"
                     />
                     <button
                       onClick={handleGenerate}
                       disabled={isGenerating || !Written_form.content}
-                      className="absolute right-2 top-2 px-3 py-1 bg-indigo-100 text-indigo-700 text-xs font-bold rounded-lg hover:bg-indigo-200 disabled:opacity-50 transition-colors"
+                      className="absolute right-2 top-2 px-3 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded-lg hover:bg-blue-200 disabled:opacity-50 transition-colors"
                     >
                       {isGenerating ? '🪄 Generating...' : '🪄 AI Caption'}
                     </button>
@@ -625,7 +625,7 @@ const page = () => {
 
                 <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-100">
                   <div className="flex gap-2">
-                    <label className="flex items-center gap-2 px-4 py-2 bg-gray-50 text-gray-600 rounded-xl cursor-pointer hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                    <label className="flex items-center gap-2 px-4 py-2 bg-gray-50 text-gray-600 rounded-xl cursor-pointer hover:bg-blue-50 hover:text-blue-600 transition-colors">
                       <ImageIcon size={20} />
                       <span className="text-sm font-semibold">Photo/Video</span>
                       <input
@@ -637,7 +637,7 @@ const page = () => {
                     </label>
                   </div>
 
-                  <button type="submit" className="px-8 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-colors shadow-md">
+                  <button type="submit" className="px-8 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors shadow-md">
                     Post It!
                   </button>
                 </div>
@@ -692,7 +692,7 @@ const page = () => {
                       )}
 
                       {p.caption && (
-                        <div className="pl-4 border-l-4 border-indigo-200 dark:border-indigo-900 italic text-indigo-600 dark:text-indigo-400 text-sm mb-3">
+                        <div className="pl-4 border-l-4 border-blue-200 dark:border-blue-900 italic text-blue-600 dark:text-blue-400 text-sm mb-3">
                           {p.caption}
                         </div>
                       )}
@@ -707,7 +707,7 @@ const page = () => {
                           <Heart
                             size={20}
                             fill={p.likes?.includes(form._id) ? "currentColor" : "none"}
-                            className={p.likes?.includes(form._id) ? "text-pink-500" : ""}
+                            className={p.likes?.includes(form._id) ? "text-blue-500" : ""}
                           />
                           <span className="font-semibold text-sm">{p.likes?.length || 0}</span>
                         </button>
@@ -746,7 +746,7 @@ const page = () => {
                                         {/* Admin Reply Toggle */}
                                         <button
                                           onClick={() => setActiveReplyBox(activeReplyBox === c._id ? null : c._id)}
-                                          className="text-xs text-indigo-500 hover:text-indigo-700 font-semibold"
+                                          className="text-xs text-blue-500 hover:text-blue-700 font-semibold"
                                         >
                                           Reply
                                         </button>
@@ -754,13 +754,13 @@ const page = () => {
 
                                       {/* Replies List */}
                                       {c.replies?.length > 0 && (
-                                        <div className="mt-2 pl-3 border-l-2 border-indigo-100 space-y-2">
+                                        <div className="mt-2 pl-3 border-l-2 border-blue-100 space-y-2">
                                           {c.replies.map((r, rIdx) => (
                                             <div key={rIdx} className="flex items-start gap-2 text-xs">
                                               <img src={r.profilepic} className="w-4 h-4 rounded-full mt-0.5" alt="pic" />
                                               <div>
-                                                <span className="font-bold text-indigo-800 dark:text-indigo-400 mr-1">{r.user_name}</span>
-                                                <span className="bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 text-[9px] px-1 rounded mr-2 font-bold tracking-wide">AUTHOR</span>
+                                                <span className="font-bold text-blue-800 dark:text-blue-400 mr-1">{r.user_name}</span>
+                                                <span className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-[9px] px-1 rounded mr-2 font-bold tracking-wide">AUTHOR</span>
                                                 <span className="text-gray-600 dark:text-neutral-400">{r.text}</span>
                                               </div>
                                             </div>
@@ -774,14 +774,14 @@ const page = () => {
                                           <input
                                             type="text"
                                             placeholder="Write a reply..."
-                                            className="flex-1 px-2 py-1 bg-gray-50 dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded text-xs text-gray-900 dark:text-white focus:outline-none focus:border-indigo-400"
+                                            className="flex-1 px-2 py-1 bg-gray-50 dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded text-xs text-gray-900 dark:text-white focus:outline-none focus:border-blue-400"
                                             value={replyInputs[c._id] || ''}
                                             onChange={(e) => setReplyInputs({ ...replyInputs, [c._id]: e.target.value })}
                                             onKeyDown={(e) => { if (e.key === 'Enter') onReply(p._id, c._id); e.stopPropagation(); }}
                                           />
                                           <button
                                             onClick={() => onReply(p._id, c._id)}
-                                            className="px-3 bg-indigo-500 text-white text-xs font-semibold rounded hover:bg-indigo-600 transition-colors uppercase tracking-wider"
+                                            className="px-3 bg-blue-500 text-white text-xs font-semibold rounded hover:bg-blue-600 transition-colors uppercase tracking-wider"
                                           >
                                             Reply
                                           </button>
@@ -801,14 +801,14 @@ const page = () => {
                               <input
                                 type="text"
                                 placeholder="Write a comment..."
-                                className="flex-1 px-3 py-2 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:border-indigo-400 placeholder-gray-500 dark:placeholder-neutral-500"
+                                className="flex-1 px-3 py-2 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:border-blue-400 placeholder-gray-500 dark:placeholder-neutral-500"
                                 value={commentInputs[p._id] || ''}
                                 onChange={(e) => setCommentInputs({ ...commentInputs, [p._id]: e.target.value })}
                                 onKeyDown={(e) => e.key === 'Enter' && onComment(p._id)}
                               />
                               <button
                                 onClick={() => onComment(p._id)}
-                                className="p-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors"
+                                className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
                               >
                                 <Send size={16} />
                               </button>
@@ -832,13 +832,13 @@ const page = () => {
                 <div className="flex bg-gray-100 dark:bg-neutral-800 p-1 rounded-xl">
                   <button
                     onClick={() => setseefollower(true)}
-                    className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${seefollower ? 'bg-white dark:bg-neutral-700 shadow text-indigo-600 dark:text-indigo-400' : 'text-gray-500 dark:text-neutral-400 hover:text-gray-700 dark:hover:text-white'}`}
+                    className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${seefollower ? 'bg-white dark:bg-neutral-700 shadow text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-neutral-400 hover:text-gray-700 dark:hover:text-white'}`}
                   >
                     Followers
                   </button>
                   <button
                     onClick={() => setseefollower(false)}
-                    className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${!seefollower ? 'bg-white dark:bg-neutral-700 shadow text-indigo-600 dark:text-indigo-400' : 'text-gray-500 dark:text-neutral-400 hover:text-gray-700 dark:hover:text-white'}`}
+                    className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${!seefollower ? 'bg-white dark:bg-neutral-700 shadow text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-neutral-400 hover:text-gray-700 dark:hover:text-white'}`}
                   >
                     Following
                   </button>
@@ -866,7 +866,7 @@ const page = () => {
                         <div className="min-w-0">
                           <Link
                             href={{ pathname: "/ViewFriends", query: { friend_email: user.sender_email, user_email: session.user.email } }}
-                            className="block font-semibold text-gray-900 dark:text-white truncate hover:text-indigo-600 dark:hover:text-indigo-400"
+                            className="block font-semibold text-gray-900 dark:text-white truncate hover:text-blue-600 dark:hover:text-blue-400"
                           >
                             {user.sender_username || user.sender_email.split('@')[0]}
                           </Link>

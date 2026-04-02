@@ -23,7 +23,7 @@ const BottomNavbar = () => {
     { Icon: Home, label: "Home", path: "/" },
     { Icon: Search, label: "Search", path: "/search" },
     { Icon: PlusSquare, label: "Create", path: "/create" },
-    { Icon: Heart, label: "Activity", path: "/Notification" },
+    { Icon: Heart, label: "Notification", path: "/Notification" },
     { Icon: MessageCircle, label: "Messages", path: "/Chat" },
     { Icon: User, label: "Profile", path: "/User" },
   ];
@@ -40,7 +40,7 @@ const BottomNavbar = () => {
             href={path}
             className={`flex flex-col items-center gap-1 p-1 rounded-xl transition-all duration-300 ${
               isActive
-                ? 'text-violet-600 dark:text-violet-400'
+                ? 'text-blue-600 dark:text-blue-400'
                 : 'text-gray-500 dark:text-gray-400'
             }`}
           >

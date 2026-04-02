@@ -9,16 +9,16 @@
   --font-mono: var(--font-geist-mono);
 
   /* Vibrant Palette */
-  --color-primary-gradient: linear-gradient(135deg, #8b5cf6 0%, #d946ef 50%, #f97316 100%);
+  --color-primary-gradient: linear-gradient(135deg, #3b82f6 0%, #06b6d4 50%, #0ea5e9 100%);
   --color-glass-surface: rgba(255, 255, 255, 0.7);
   --color-glass-border: rgba(255, 255, 255, 0.5);
 }
 
 :root {
-  --background: #fdf2f8;
-  /* Very light pinkish-white for warmth */
-  --foreground: #1e1b4b;
-  /* Deep Indigo for text */
+  --background: #f0f9ff;
+  /* Very light bluish-white for freshness */
+  --foreground: #0f172a;
+  /* Deep slate for text */
 }
 
 /* Rely on the class added by the ThemeProvider instead of the OS media preference */
@@ -47,10 +47,10 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(139, 92, 246, 0.3);
+  background: rgba(59, 130, 246, 0.3);
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(139, 92, 246, 0.6);
+  background: rgba(59, 130, 246, 0.6);
 }

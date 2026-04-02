@@ -48,9 +48,9 @@ const page = () => {
   if (loading) return <div className="text-center p-10 text-white">Loading...</div>;
 
   return (
-    <div className="flex">
+    <div className="flex h-screen overflow-hidden">
       <Sidebar className="flex-1" />
-      <main className="flex-1 min-h-screen bg-gray-50 dark:bg-black pb-20 md:pb-8">
+      <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-black pb-20 md:pb-8">
         <div className="max-w-2xl mx-auto px-4 py-6 md:py-8 space-y-8">
 
         {/* FRIEND REQUESTS SECTION */}
@@ -93,7 +93,7 @@ const page = () => {
                   ) : (
                     <button
                       onClick={() => acceptrequest(p._id)}
-                      className="p-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all shadow-md active:scale-95"
+                      className="p-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all shadow-md active:scale-95"
                       title="Accept Request"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -125,7 +125,7 @@ const page = () => {
                     className="w-11 h-11 lg:w-12 lg:h-12 rounded-full object-cover border border-gray-100 dark:border-neutral-800 shadow-sm"
                     alt="avatar"
                   />
-                  <div className={`absolute -bottom-1 -right-1 p-1 rounded-full border-2 border-white dark:border-neutral-900 shadow-sm ${n.type === 'like' ? 'bg-pink-500 text-white' : 'bg-indigo-500 text-white'}`}>
+                  <div className={`absolute -bottom-1 -right-1 p-1 rounded-full border-2 border-white dark:border-neutral-900 shadow-sm ${n.type === 'like' ? 'bg-blue-500 text-white' : 'bg-blue-500 text-white'}`}>
                     {n.type === 'like' ? (
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-2.5 w-2.5" viewBox="0 0 20 20" fill="currentColor">
                         <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />

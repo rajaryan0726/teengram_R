@@ -238,13 +238,13 @@ const page = () => {
                       <div className="flex items-center justify-between mb-3 lg:mb-4">
                         <Link href={p.user_id === form._id ? "/User" : { pathname: "/ViewFriends", query: { friend_email: p.user_email || p.user_id } }} className="flex items-center gap-2 lg:gap-3 group relative">
                             <div className="relative">
-                                <img src={p.profilepic} className="w-10 h-10 lg:w-12 lg:h-12 rounded-full object-cover border-2 border-gray-100 dark:border-neutral-700 group-hover:border-indigo-400 transition" alt="avatar" />
+                                <img src={p.profilepic} className="w-10 h-10 lg:w-12 lg:h-12 rounded-full object-cover border-2 border-gray-100 dark:border-neutral-700 group-hover:border-blue-400 transition" alt="avatar" />
                                 {onlineUsers?.has(p.user_id) && (
                                     <span className="absolute bottom-0 right-0 w-3 h-3 lg:w-3.5 lg:h-3.5 bg-green-500 border-2 border-white dark:border-neutral-900 rounded-full shadow-sm animate-pulse"></span>
                                 )}
                             </div>
                             <div>
-                                <h4 className="font-bold text-sm lg:text-base text-gray-900 dark:text-gray-100 group-hover:text-indigo-600 transition">{p.user_name}</h4>
+                                <h4 className="font-bold text-sm lg:text-base text-gray-900 dark:text-gray-100 group-hover:text-blue-600 transition">{p.user_name}</h4>
                                 <p className="text-[10px] lg:text-xs text-gray-500 dark:text-gray-400">{new Date(p.createdAt).toLocaleDateString()} at {new Date(p.createdAt).toLocaleTimeString([], {timeStyle: 'short'})}</p>
                             </div>
                         </Link>
@@ -264,7 +264,7 @@ const page = () => {
                       )}
 
                       {p.caption && (
-                        <div className="pl-4 border-l-4 border-indigo-200 dark:border-indigo-900 italic text-indigo-700 dark:text-indigo-300 text-sm mb-4 font-medium">
+                        <div className="pl-4 border-l-4 border-blue-200 dark:border-blue-900 italic text-blue-700 dark:text-blue-300 text-sm mb-4 font-medium">
                           {p.caption}
                         </div>
                       )}
@@ -273,12 +273,12 @@ const page = () => {
                       <div className="flex items-center gap-6 pt-3 border-t border-gray-100 dark:border-neutral-800">
                         <button
                           onClick={() => p.user_id !== form._id && onLike(p._id)}
-                          className={`flex items-center gap-1.5 transition-colors ${p.user_id === form._id ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed opacity-60' : 'text-gray-500 hover:text-pink-500 dark:text-gray-400 dark:hover:text-pink-400'}`}
+                          className={`flex items-center gap-1.5 transition-colors ${p.user_id === form._id ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed opacity-60' : 'text-gray-500 hover:text-blue-500 dark:text-gray-400 dark:hover:text-blue-400'}`}
                         >
                           <Heart
                             size={24}
                             fill={p.likes?.includes(form._id) ? "currentColor" : "none"}
-                            className={p.likes?.includes(form._id) ? "text-pink-500 dark:text-pink-400" : ""}
+                            className={p.likes?.includes(form._id) ? "text-blue-500 dark:text-blue-400" : ""}
                           />
                           <span className="font-semibold">{p.likes?.length || 0}</span>
                         </button>
@@ -315,7 +315,7 @@ const page = () => {
                                         {p.user_id === form._id && (
                                             <button 
                                             onClick={() => setActiveReplyBox(activeReplyBox === c._id ? null : c._id)}
-                                            className="text-xs text-indigo-500 hover:text-indigo-700 dark:text-indigo-400 font-bold tracking-wide"
+                                            className="text-xs text-blue-500 hover:text-blue-700 dark:text-blue-400 font-bold tracking-wide"
                                             >
                                             Reply
                                             </button>
@@ -323,13 +323,13 @@ const page = () => {
                                       </div>
                                       
                                       {c.replies?.length > 0 && (
-                                        <div className="mt-3 pl-3 border-l-2 border-indigo-200 dark:border-indigo-900/50 space-y-3">
+                                        <div className="mt-3 pl-3 border-l-2 border-blue-200 dark:border-blue-900/50 space-y-3">
                                           {c.replies.map((r, rIdx) => (
                                             <div key={rIdx} className="flex items-start gap-2 text-xs">
                                               <img src={r.profilepic} className="w-5 h-5 rounded-full mt-0.5" alt="pic" />
                                               <div>
-                                                <span className="font-bold text-indigo-800 dark:text-indigo-300 mr-1">{r.user_name}</span>
-                                                {r.user_id === p.user_id && <span className="bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200 text-[9px] px-1 rounded mr-2 font-bold tracking-wide">AUTHOR</span>}
+                                                <span className="font-bold text-blue-800 dark:text-blue-300 mr-1">{r.user_name}</span>
+                                                {r.user_id === p.user_id && <span className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-[9px] px-1 rounded mr-2 font-bold tracking-wide">AUTHOR</span>}
                                                 <span className="text-gray-600 dark:text-gray-400">{r.text}</span>
                                               </div>
                                             </div>
@@ -342,14 +342,14 @@ const page = () => {
                                           <input
                                             type="text"
                                             placeholder="Write a reply..."
-                                            className="flex-1 px-3 py-1.5 bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-lg text-xs text-gray-900 dark:text-gray-100 focus:outline-none focus:border-indigo-400 transition"
+                                            className="flex-1 px-3 py-1.5 bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-lg text-xs text-gray-900 dark:text-gray-100 focus:outline-none focus:border-blue-400 transition"
                                             value={replyInputs[c._id] || ''}
                                             onChange={(e) => setReplyInputs({ ...replyInputs, [c._id]: e.target.value })}
                                             onKeyDown={(e) => { if (e.key === 'Enter') onReply(p._id, c._id); e.stopPropagation(); }}
                                           />
                                           <button
                                             onClick={() => onReply(p._id, c._id)}
-                                            className="px-3 bg-indigo-500 text-white text-xs font-semibold rounded-lg hover:bg-indigo-600 transition-colors uppercase tracking-wider"
+                                            className="px-3 bg-blue-500 text-white text-xs font-semibold rounded-lg hover:bg-blue-600 transition-colors uppercase tracking-wider"
                                           >
                                             Send
                                           </button>
@@ -367,7 +367,7 @@ const page = () => {
                               <input
                                 type="text"
                                 placeholder="Add a comment..."
-                                className="flex-1 px-4 py-2 bg-gray-50 dark:bg-neutral-800 border-0 rounded-full text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 placeholder-gray-500 dark:placeholder-gray-400"
+                                className="flex-1 px-4 py-2 bg-gray-50 dark:bg-neutral-800 border-0 rounded-full text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-gray-500 dark:placeholder-gray-400"
                                 value={commentInputs[p._id] || ''}
                                 onChange={(e) => setCommentInputs({ ...commentInputs, [p._id]: e.target.value })}
                                 onKeyDown={(e) => e.key === 'Enter' && onComment(p._id)}

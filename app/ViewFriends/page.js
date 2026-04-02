@@ -220,7 +220,7 @@ const ViewFriendsPage = () => {
       <div className="flex bg-gray-50 min-h-screen">
         <Sidebar className="flex-1" />
         <main className="flex-1 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
         </main>
       </div>
     )
@@ -238,7 +238,7 @@ const ViewFriendsPage = () => {
           {/* ... (Profile Header Card logic same as before, skipping lines for brevity if unchanged) ... */}
           <div className="bg-white rounded-3xl shadow-xl overflow-hidden relative border border-gray-100">
             {/* ... Header Content ... */}
-            <div className="h-40 bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500"></div>
+            <div className="h-40 bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-500"></div>
             <div className="px-8 pb-8">
               <div className="relative flex flex-col md:flex-row items-end -mt-16 mb-6 gap-6">
                 {/* Avatar */}
@@ -261,14 +261,14 @@ const ViewFriendsPage = () => {
                   <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-4">
                     <div>
                       <h1 className="text-3xl font-bold text-gray-900 leading-tight">{friend.name}</h1>
-                      <p className="text-violet-600 font-medium">@{friend.username}</p>
+                      <p className="text-blue-600 font-medium">@{friend.username}</p>
                       {/* ... Institute ... */}
                     </div>
                     {/* ... Action Buttons ... */}
                     <div className="flex gap-3">
                       {connectionStatus === 'friends' && (
                         <Link href={{ pathname: "/Chat", query: { friend_email: friend.email } }}>
-                          <button className="flex items-center gap-2 px-6 py-2.5 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-violet-50 hover:text-violet-600 hover:border-violet-200 transition-all shadow-sm">
+                          <button className="flex items-center gap-2 px-6 py-2.5 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm">
                             <MessageCircle size={18} />
                             <span>Message</span>
                           </button>
@@ -286,12 +286,12 @@ const ViewFriendsPage = () => {
                           <span>Requested</span>
                         </button>
                       ) : connectionStatus === 'pending_received' ? (
-                        <button onClick={handleAcceptRequest} className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold rounded-xl hover:shadow-lg hover:scale-105 transition-all">
+                        <button onClick={handleAcceptRequest} className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold rounded-xl hover:shadow-lg hover:scale-105 transition-all">
                           <UserPlus size={18} />
                           <span>Accept Request</span>
                         </button>
                       ) : (
-                        <button onClick={handleSendRequest} className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white font-bold rounded-xl hover:shadow-lg hover:scale-105 transition-all">
+                        <button onClick={handleSendRequest} className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold rounded-xl hover:shadow-lg hover:scale-105 transition-all">
                           <UserPlus size={18} />
                           <span>Connect</span>
                         </button>
@@ -374,7 +374,7 @@ const ViewFriendsPage = () => {
 
                     {post.caption && (
                       <div className="mt-auto pt-4 border-t border-gray-50 mb-3">
-                        <p className="text-sm font-medium text-violet-600 italic">
+                        <p className="text-sm font-medium text-blue-600 italic">
                           ✨ {post.caption}
                         </p>
                       </div>
@@ -384,7 +384,7 @@ const ViewFriendsPage = () => {
                     <div className="flex items-center gap-4 mt-4 pt-3 border-t border-gray-200">
                       <button
                         onClick={() => onLike(post._id)}
-                        className="flex items-center gap-1.5 text-gray-500 hover:text-pink-500 transition-colors"
+                        className="flex items-center gap-1.5 text-gray-500 hover:text-blue-500 transition-colors"
                       >
                         <Heart
                           size={20}
@@ -393,7 +393,7 @@ const ViewFriendsPage = () => {
                           // For rendering INITIAL state, we need to know 'myId'.
                           // Let's assume for now we don't highlight until first interaction OR we fetch 'me' on load.
                           // Better: Fetch 'me' in useEffect.
-                          className={post.likes && post.likes.length > 0 ? "text-pink-500" : ""} // Placeholder logic mostly for visual if liked by *anyone* (wrong)
+                          className={post.likes && post.likes.length > 0 ? "text-blue-500" : ""} // Placeholder logic mostly for visual if liked by *anyone* (wrong)
                         // Real fix: fetch current user ID
                         />
                         <span className="font-semibold text-sm">{post.likes?.length || 0}</span>
@@ -432,13 +432,13 @@ const ViewFriendsPage = () => {
                                     
                                     {/* Replies List */}
                                     {c.replies?.length > 0 && (
-                                      <div className="mt-2 pl-3 border-l-2 border-indigo-100 space-y-2">
+                                      <div className="mt-2 pl-3 border-l-2 border-blue-100 space-y-2">
                                         {c.replies.map((r, rIdx) => (
                                           <div key={rIdx} className="flex items-start gap-2 text-xs">
                                             <img src={r.profilepic} className="w-4 h-4 rounded-full mt-0.5" alt="pic" />
                                             <div>
-                                              <span className="font-bold text-indigo-800 mr-1">{r.user_name}</span>
-                                              <span className="bg-indigo-100 text-indigo-800 text-[9px] px-1 rounded mr-2 font-bold tracking-wide">AUTHOR</span>
+                                              <span className="font-bold text-blue-800 mr-1">{r.user_name}</span>
+                                              <span className="bg-blue-100 text-blue-800 text-[9px] px-1 rounded mr-2 font-bold tracking-wide">AUTHOR</span>
                                               <span className="text-gray-600">{r.text}</span>
                                             </div>
                                           </div>
@@ -458,14 +458,14 @@ const ViewFriendsPage = () => {
                             <input
                               type="text"
                               placeholder="Write a comment..."
-                              className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-indigo-400 placeholder-gray-500"
+                              className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-blue-400 placeholder-gray-500"
                               value={commentInputs[post._id] || ''}
                               onChange={(e) => setCommentInputs({ ...commentInputs, [post._id]: e.target.value })}
                               onKeyDown={(e) => e.key === 'Enter' && onComment(post._id)}
                             />
                             <button
                               onClick={() => onComment(post._id)}
-                              className="p-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors"
+                              className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
                             >
                               <Send size={16} />
                             </button>

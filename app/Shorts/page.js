@@ -193,7 +193,7 @@ const ShortsPage = () => {
                                     {/* Author & Caption (Bottom Left) */}
                                     <div className="absolute bottom-6 left-4 right-20 z-10 flex flex-col gap-3">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-12 h-12 rounded-full p-[2px] bg-gradient-to-tr from-orange-500 to-amber-500">
+                                            <div className="w-12 h-12 rounded-full p-[2px] bg-gradient-to-tr from-sky-500 to-sky-500">
                                                 <img src={short.profilepic} className="w-full h-full rounded-full object-cover border-2 border-black" />
                                             </div>
                                             <span className="font-bold text-[17px] tracking-wide text-white drop-shadow-md">@{short.user_name || 'user'}</span>
@@ -223,7 +223,7 @@ const ShortsPage = () => {
                                             className="group flex flex-col items-center gap-1 transition-transform active:scale-90"
                                         >
                                             <div className="w-12 h-12 bg-black/40 rounded-full flex items-center justify-center backdrop-blur-md border border-white/10 group-hover:bg-white/10 transition">
-                                                <Heart className={`w-7 h-7 ${isLiked ? 'fill-rose-500 text-rose-500' : 'text-white'}`} />
+                                                <Heart className={`w-7 h-7 ${isLiked ? 'fill-cyan-500 text-cyan-500' : 'text-white'}`} />
                                             </div>
                                             <span className="text-xs font-bold drop-shadow-md">{short.likes?.length || 0}</span>
                                         </button>
@@ -314,7 +314,7 @@ const ShortsPage = () => {
                                                                         />
                                                                         <button
                                                                             onClick={() => onReply(short._id, c._id)}
-                                                                            className="p-1.5 bg-indigo-500 text-white text-xs font-semibold rounded-full hover:bg-indigo-600 transition-colors"
+                                                                            className="p-1.5 bg-blue-500 text-white text-xs font-semibold rounded-full hover:bg-blue-600 transition-colors"
                                                                         >
                                                                             <Send size={14} className="ml-0.5" />
                                                                         </button>
@@ -341,7 +341,7 @@ const ShortsPage = () => {
                                                         />
                                                         <button
                                                             onClick={() => onComment(short._id)}
-                                                            className="p-2 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-full hover:shadow-lg transition-transform active:scale-95"
+                                                            className="p-2 bg-gradient-to-r from-sky-500 to-sky-500 text-white rounded-full hover:shadow-lg transition-transform active:scale-95"
                                                         >
                                                             <Send size={16} className="-ml-0.5" />
                                                         </button>

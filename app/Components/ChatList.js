@@ -29,7 +29,7 @@ const ChatListItem = ({ chat, isActive, onClick, currentUserId, isOnline }) => {
             className={`
                 flex items-center p-4 mx-2 mb-2 rounded-2xl cursor-pointer transition-all duration-300 border border-transparent
                 ${isActive
-                    ? 'bg-white dark:bg-neutral-900 shadow-lg shadow-violet-200/50 dark:shadow-none border-violet-100 dark:border-neutral-800 transform scale-[1.02]'
+                    ? 'bg-white dark:bg-neutral-900 shadow-lg shadow-blue-200/50 dark:shadow-none border-blue-100 dark:border-neutral-800 transform scale-[1.02]'
                     : 'hover:bg-white/60 dark:hover:bg-neutral-900/60 hover:shadow-sm'
                 }
             `}
@@ -39,7 +39,7 @@ const ChatListItem = ({ chat, isActive, onClick, currentUserId, isOnline }) => {
                 <img
                     src={displayPic || "/default-avatar.png"}
                     alt={displayName}
-                    className={`w-14 h-14 rounded-full object-cover border-2 ${isActive ? 'border-violet-500' : 'border-white ring-2 ring-gray-100'}`}
+                    className={`w-14 h-14 rounded-full object-cover border-2 ${isActive ? 'border-blue-500' : 'border-white ring-2 ring-gray-100'}`}
                 />
                 {/* Online Indicator */}
                 {isOnline && (
@@ -58,7 +58,7 @@ const ChatListItem = ({ chat, isActive, onClick, currentUserId, isOnline }) => {
                     )}
                 </div>
                 {/* Highlight last message if unread */}
-                <p className={`text-sm truncate ${isActive || unreadCount > 0 ? 'font-medium text-violet-600 dark:text-violet-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                <p className={`text-sm truncate ${isActive || unreadCount > 0 ? 'font-medium text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}`}>
                     {chat.lastMessage?.sender?._id === currentUserId ? 'You: ' : ''}
                     {chat.lastMessage?.content || 'Start a conversation.'}
                 </p>
@@ -66,7 +66,7 @@ const ChatListItem = ({ chat, isActive, onClick, currentUserId, isOnline }) => {
 
             {/* Unread Count */}
             {unreadCount > 0 && (
-                <span className="flex items-center justify-center w-5 h-5 ml-2 text-xs font-bold text-white bg-gradient-to-r from-violet-500 to-fuchsia-500 rounded-full shadow-md">
+                <span className="flex items-center justify-center w-5 h-5 ml-2 text-xs font-bold text-white bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full shadow-md">
                     {unreadCount}
                 </span>
             )}
@@ -78,7 +78,7 @@ const ChatListItem = ({ chat, isActive, onClick, currentUserId, isOnline }) => {
 const GlobalUserItem = ({ user, onClick }) => (
     <div
         onClick={() => onClick(user)}
-        className="flex items-center p-3 mx-2 mb-2 rounded-xl cursor-pointer hover:bg-violet-50 dark:hover:bg-neutral-900 transition-colors border border-dashed border-gray-200 dark:border-neutral-800 hover:border-violet-200 dark:hover:border-neutral-700"
+        className="flex items-center p-3 mx-2 mb-2 rounded-xl cursor-pointer hover:bg-blue-50 dark:hover:bg-neutral-900 transition-colors border border-dashed border-gray-200 dark:border-neutral-800 hover:border-blue-200 dark:hover:border-neutral-700"
     >
         <img
             src={user.profilepic || "/default-avatar.png"}
@@ -89,7 +89,7 @@ const GlobalUserItem = ({ user, onClick }) => (
             <p className="font-semibold text-gray-800 dark:text-white text-sm">{user.name}</p>
             <p className="text-xs text-gray-500 dark:text-gray-400">@{user.username}</p>
         </div>
-        <div className="ml-auto text-violet-600 dark:text-violet-400">
+        <div className="ml-auto text-blue-600 dark:text-blue-400">
             <UserPlus size={18} />
         </div>
     </div>
@@ -174,19 +174,19 @@ const ChatList = ({ conversations, activeChatId, setActiveChatId, currentUserId,
 
             {/* Header: Search/New Chat */}
             <div className="p-6 pb-4 bg-white dark:bg-black border-b border-gray-100 dark:border-neutral-800 sticky top-0 z-10 transition-colors duration-300">
-                <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-600 to-fuchsia-600 dark:from-violet-400 dark:to-fuchsia-400 mb-6">
+                <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-cyan-600 dark:from-blue-400 dark:to-cyan-400 mb-6">
                     Messages
                 </h2>
 
                 <div className="relative group">
-                    <Search className="absolute left-4 top-3.5 text-gray-400 w-5 h-5 transition-colors group-focus-within:text-violet-500 dark:group-focus-within:text-violet-400" />
+                    <Search className="absolute left-4 top-3.5 text-gray-400 w-5 h-5 transition-colors group-focus-within:text-blue-500 dark:group-focus-within:text-blue-400" />
                     <input
                         type="text"
                         placeholder="Search chats or people..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="w-full pl-12 pr-4 py-3 bg-white dark:bg-neutral-900 text-gray-900 dark:text-white border border-gray-200 dark:border-neutral-800 rounded-2xl 
-                                   focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 dark:focus:border-violet-400
+                                   focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400
                                    placeholder-gray-400 font-medium transition-all shadow-sm group-hover:shadow-md dark:shadow-none"
                     />
                 </div>

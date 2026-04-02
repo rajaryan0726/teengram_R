@@ -8,6 +8,7 @@ import Conversation from '../models/Conversation.js'
 import Message from '../models/Message.js'
 import Written_Post from '../models/Written_Post.js'
 import Moment from '../models/Moment.js'
+import Event from '../models/Event.js'
 import { getRedisClient } from '../lib/redis.js'
 
 // Helper to serialize Mongoose documents
@@ -948,4 +949,67 @@ export const fetchShortsFeed = async (userEmail, userId) => {
     
     const sortedFeed = [...tier1, ...tier2, ...tier3];
     return sortedFeed.map(serializeDoc);
+};
+
+// ==========================================
+// NEW: EXPLORE FEED ACTIONS
+// ==========================================
+
+export const fetchExploreFeed = async (userEmail, userId) => {
+    await connectDb();
+    
+    // 1. Get Following Users
+    let followingDocs = await Friends.find({ sender_email: userEmail, request_accepted: true }).lean();
+    const followingEmails = followingDocs.map(d => d.reciever_email);
+    const followingUsers = await User.find({ email: { $in: followingEmails } }).select('_id').lean();
+    const followingIds = followingUsers.map(u => u._id.toString());
+    
+    // 2. Query All Written Posts (Posts and Shorts)
+    let allPosts = await Written_Post.find({}).sort({ createdAt: -1 }).lean();
+    let normalizedPosts = allPosts.map(post => ({
+        ...post,
+        _id: post._id.toString(),
+        feedType: post.isShort ? 'short' : 'post',
+        authorId: post.user_id?.toString()
+    }));
+
+    // 3. Query All Events (Arena)
+    let allEvents = await Event.find({}).sort({ createdAt: -1 }).lean();
+    let creatorIds = allEvents.map(e => e.creatorId);
+    let eventCreators = await User.find({ _id: { $in: creatorIds } }).select('_id name username profilepic').lean();
+    const creatorMap = {};
+    eventCreators.forEach(u => { creatorMap[u._id.toString()] = u; });
+
+    let normalizedEvents = allEvents.map(event => ({
+        ...event,
+        _id: event._id.toString(),
+        feedType: 'event',
+        authorId: event.creatorId?.toString(),
+        user_name: creatorMap[event.creatorId?.toString()]?.username || 'Unknown',
+        profilepic: creatorMap[event.creatorId?.toString()]?.profilepic || "https://placehold.co/600x400/png"
+    }));
+
+    // 4. Combine and Sort by Following Status (Tier 1 & Tier 2)
+    const combinedContent = [...normalizedPosts, ...normalizedEvents];
+
+    let tier1 = []; // Followed Users
+    let tier2 = []; // Others
+
+    combinedContent.forEach(item => {
+        // Exclude current user's content from the explore feed
+        if (item.authorId === userId) return;
+
+        if (followingIds.includes(item.authorId)) {
+            tier1.push(item);
+        } else {
+            tier2.push(item);
+        }
+    });
+
+    tier1.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    tier2.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    const exploreFeed = [...tier1, ...tier2];
+    
+    return exploreFeed.map(serializeDoc);
 };

@@ -30,6 +30,7 @@ const Sidebar = () => {
   const { data: session } = useSession();
   const { socket } = useSocket();
   const [hasUnread, setHasUnread] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   // Fetch initial unread count and listen for new live messages
   useEffect(() => {
@@ -68,7 +69,7 @@ const Sidebar = () => {
     { Icon: Compass, label: "Explore", path: "/schoolCompetitions" },
     { Icon: Film, label: "Shorts", path: "/Shorts" },
     { Icon: MessageCircle, label: "Messages", path: "/Chat" },
-    { Icon: Heart, label: "Activity", path: "/Notification" },
+    { Icon: Heart, label: "Notification", path: "/Notification" },
     { Icon: PlusSquare, label: "Create", path: "/create" },
     { Icon: Trophy, label: "Arena", path: "/teenarena" },
     { Icon: User, label: "Profile", path: "/User" },
@@ -76,15 +77,18 @@ const Sidebar = () => {
 
   return (
     <div
-      className="hidden md:flex h-screen w-20 lg:w-64 flex-col justify-between py-6 px-3 lg:px-4
-                 bg-white dark:bg-black border-r border-gray-200 dark:border-neutral-800 shadow-sm z-50 overflow-y-auto scrollbar-hide transition-colors duration-300"
+      className={`hidden md:flex h-screen ${isCollapsed ? 'w-20' : 'w-20 lg:w-64'} flex-col justify-between py-6 px-3 lg:px-4
+                 bg-white dark:bg-black border-r border-gray-200 dark:border-neutral-800 shadow-sm z-50 overflow-y-auto scrollbar-hide transition-all duration-300`}
     >
       {/* Top Logo */}
-      <div className="mb-8 flex items-center justify-center lg:justify-start lg:pl-4">
-        <h1 className="hidden lg:block text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-600 via-fuchsia-500 to-orange-500" style={{ fontFamily: 'Brush Script MT, cursive' }}>
+      <div 
+        className={`mb-8 flex items-center justify-center ${isCollapsed ? '' : 'lg:justify-start lg:pl-4'} cursor-pointer`}
+        onClick={() => setIsCollapsed(!isCollapsed)}
+      >
+        <h1 className={`${isCollapsed ? 'hidden' : 'hidden lg:block'} text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-cyan-500 to-sky-500`} style={{ fontFamily: 'Brush Script MT, cursive' }}>
           TeenGram
         </h1>
-        <div className="lg:hidden w-10 h-10 rounded-xl bg-gradient-to-tr from-violet-600 to-orange-500 flex items-center justify-center text-white font-bold text-xl">
+        <div className={`${isCollapsed ? 'flex' : 'lg:hidden'} w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-sky-500 items-center justify-center text-white font-bold text-xl`}>
           T
         </div>
       </div>
@@ -99,7 +103,7 @@ const Sidebar = () => {
               href={path}
               className={`flex items-center gap-4 px-3 py-3 rounded-2xl font-medium transition-all duration-300 group
                     ${isActive
-                  ? 'bg-gradient-to-r from-violet-100 to-fuchsia-50 text-violet-700 dark:from-violet-900/40 dark:to-fuchsia-900/40 dark:text-violet-300 shadow-sm transform scale-105'
+                  ? 'bg-gradient-to-r from-blue-100 to-cyan-50 text-blue-700 dark:from-blue-900/40 dark:to-cyan-900/40 dark:text-blue-300 shadow-sm transform scale-105'
                   : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-neutral-900 dark:hover:text-white'
                 }
                 `}
@@ -109,7 +113,7 @@ const Sidebar = () => {
                   <img
                     src="/landing.png"
                     alt="Profile"
-                    className={`w-7 h-7 rounded-full border-2 ${isActive ? 'border-violet-500' : 'border-transparent'}`}
+                    className={`w-7 h-7 rounded-full border-2 ${isActive ? 'border-blue-500' : 'border-transparent'}`}
                   />
                 ) : (
                   <Icon className={`w-7 h-7 ${isActive ? 'stroke-[2.5px]' : 'stroke-2'}`} />
@@ -120,7 +124,7 @@ const Sidebar = () => {
                 )}
               </div>
 
-              <span className="hidden lg:block text-base">{label}</span>
+              <span className={`${isCollapsed ? 'hidden' : 'hidden lg:block'} text-base`}>{label}</span>
             </Link>
           );
         })}
@@ -132,8 +136,8 @@ const Sidebar = () => {
           onClick={toggleTheme}
           className="w-full flex items-center gap-4 px-3 py-3 rounded-2xl font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-neutral-900 dark:hover:text-white transition-all duration-200"
         >
-          {theme === 'dark' ? <Sun className="w-7 h-7 text-amber-500" /> : <Moon className="w-7 h-7 text-indigo-500" />}
-          <span className="hidden lg:block text-base">{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+          {theme === 'dark' ? <Sun className="w-7 h-7 text-sky-500" /> : <Moon className="w-7 h-7 text-blue-500" />}
+          <span className={`${isCollapsed ? 'hidden' : 'hidden lg:block'} text-base`}>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
         </button>
 
         <Link
@@ -141,7 +145,7 @@ const Sidebar = () => {
           className="flex items-center gap-4 px-3 py-3 rounded-2xl font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-neutral-900 dark:hover:text-white transition-all duration-200"
         >
           <Menu className="w-7 h-7" />
-          <span className="hidden lg:block text-base">More</span>
+          <span className={`${isCollapsed ? 'hidden' : 'hidden lg:block'} text-base`}>More</span>
         </Link>
       </div>
     </div>
