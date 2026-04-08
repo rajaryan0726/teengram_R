@@ -1,7 +1,7 @@
 "use client"
 import React from 'react'
 import Sidebar from '../Components/Sidebar'
-import { fetchfriendrequest, accept_request, fetchNotifications } from '@/actions/useractions'
+import { fetchfriendrequest, accept_request, fetchNotifications, markNotificationsRead } from '@/actions/useractions'
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
@@ -34,6 +34,9 @@ const page = () => {
     // Fetch Notifications (Likes/Comments)
     let n = await fetchNotifications(session.user.email)
     setNotifications(n);
+
+    // Mark all notifications as read so the green dot clears
+    await markNotificationsRead(session.user.email);
 
     setLoading(false);
   }

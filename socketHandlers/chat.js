@@ -161,23 +161,42 @@ export default (io, socket, onlineUsers) => {
     });
 
     // --- NEW: Social Features (Likes/Comments) ---
-    socket.on('post_reaction', (data) => {
+    socket.on('post_reaction', async (data) => {
         // data = { postId, type, action, userId, ... }
         // Broadcast to everyone to update UI (Like counts, comments)
         io.emit('post_updated', data);
 
-        // Send push notification to the pc-owner if they are online
-        if (data.recipientId && onlineUsers.has(data.recipientId)) {
-            const recipientSocketId = onlineUsers.get(data.recipientId);
-            // Construct a notification object slightly different from DB schema if needed by frontend
-            // Or just pass enough info for the toast
-            const notificationPayload = {
-                type: data.type,
-                sender_username: data.sender_username, // We might need to pass this from client or fetch it
-                text: data.type === 'like' ? 'liked your post' : 'commented on your post',
-                createdAt: new Date(),
-            };
-            io.to(recipientSocketId).emit('new_notification', notificationPayload);
+        // Look up the post owner from DB and send them a real-time notification
+        try {
+            const Written_Post = mongoose.model('Written_Post');
+            const post = await Written_Post.findById(data.postId).select('user_id').lean();
+            
+            if (post && post.user_id) {
+                const postOwnerId = post.user_id.toString();
+                
+                // Find who triggered this reaction (the current socket's user)
+                let senderId = null;
+                for (const [userId, socketId] of onlineUsers.entries()) {
+                    if (socketId === socket.id) {
+                        senderId = userId;
+                        break;
+                    }
+                }
+
+                // Don't notify the user about their own actions
+                if (senderId && postOwnerId !== senderId) {
+                    // Emit to the post owner's personal room (they joined it via register_user)
+                    io.to(postOwnerId).emit('new_notification', {
+                        type: data.type,
+                        sender_username: data.sender_username || 'Someone',
+                        text: data.type === 'like' ? 'liked your post' : data.type === 'comment' ? 'commented on your post' : 'replied to a comment',
+                        createdAt: new Date(),
+                    });
+                    console.log(`[Notification] Sent ${data.type} notification to user ${postOwnerId}`);
+                }
+            }
+        } catch (e) {
+            console.error('Error sending notification for post_reaction:', e.message);
         }
     });
 

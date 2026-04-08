@@ -335,7 +335,7 @@ const ChatView = ({ activeChat, currentUserId, onBack, onStartCall }) => {
             </div>
 
             {/* Message Area */}
-            <div className="flex-1 p-6 overflow-y-auto space-y-6 custom-scrollbar bg-slate-50/50 dark:bg-[#0a0a0a]/50 transition-colors duration-300">
+            <div className="flex-1 px-3 py-4 md:p-6 overflow-y-auto space-y-4 md:space-y-6 custom-scrollbar bg-slate-50/50 dark:bg-[#0a0a0a]/50 transition-colors duration-300">
                 {/* Deduplicate messages by _id before rendering */}
                 {[...new Map(messages.map(m => [m._id, m])).values()].map((message, index, deduped) => {
                     // Check if the message belongs to the current user
@@ -366,11 +366,11 @@ const ChatView = ({ activeChat, currentUserId, onBack, onStartCall }) => {
                                 className={`flex ${isMe ? 'justify-end' : 'justify-start'} group mb-1`}
                             >
                             {!isMe && (
-                                <div className={`w-8 mr-3 flex-shrink-0 ${showAvatar ? 'opacity-100' : 'opacity-0'}`}>
+                                <div className={`w-7 md:w-8 mr-1.5 md:mr-3 flex-shrink-0 ${showAvatar ? 'opacity-100' : 'opacity-0'}`}>
                                     {showAvatar && (
                                         <img
                                             src={chatPartnerPic}
-                                            className="w-9 h-9 rounded-full object-cover border border-white shadow-sm"
+                                            className="w-7 h-7 md:w-9 md:h-9 rounded-full object-cover border border-white shadow-sm"
                                         />
                                     )}
                                 </div>
@@ -384,7 +384,7 @@ const ChatView = ({ activeChat, currentUserId, onBack, onStartCall }) => {
                                         setTimeout(() => setChatError(null), 3000);
                                     }
                                 }}
-                                className={`max-w-[85%] md:max-w-[75%] lg:max-w-[65%] px-3 md:px-5 py-2 md:py-3 rounded-2xl shadow-sm text-sm md:text-[15px] leading-relaxed relative transition-all ${isSelectMode && isDeletable ? 'cursor-pointer hover:scale-[1.02]' : ''}
+                                className={`max-w-[75%] md:max-w-[75%] lg:max-w-[65%] px-3 md:px-5 py-2 md:py-3 rounded-2xl shadow-sm text-sm md:text-[15px] leading-relaxed relative transition-all ${isSelectMode && isDeletable ? 'cursor-pointer hover:scale-[1.02]' : ''}
                                     ${isSelectMode && !isDeletable ? 'opacity-60 cursor-not-allowed grayscale' : ''}
                                     ${isSelectMode && selectedMessages.has(message._id) ? 'ring-4 ring-red-400 opacity-90 scale-95' : ''}
                                     ${isMe

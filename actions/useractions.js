@@ -734,6 +734,33 @@ export const fetchNotifications = async (userEmail) => {
     return realNotifs.map(doc => serializeDoc(doc));
 };
 
+export const checkUnreadNotifications = async (userEmail) => {
+    await connectDb();
+
+    // Check for unread notifications (likes, comments, replies)
+    const unreadNotifCount = await Notification.countDocuments({
+        recipient_email: userEmail,
+        read: false
+    });
+
+    // Check for pending friend requests
+    const pendingRequestCount = await Friends.countDocuments({
+        reciever_email: userEmail,
+        request_accepted: { $ne: true }
+    });
+
+    return (unreadNotifCount + pendingRequestCount) > 0;
+};
+
+export const markNotificationsRead = async (userEmail) => {
+    await connectDb();
+    await Notification.updateMany(
+        { recipient_email: userEmail, read: false },
+        { $set: { read: true } }
+    );
+    return { success: true };
+};
+
 export const deleteMessagesAction = async (conversationId, messageIds, userId, deleteForEveryone = false) => {
     await connectDb();
     

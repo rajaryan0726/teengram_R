@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import { usePathname } from 'next/navigation'; // Import hook for active state
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { useSocket } from "../providers/SocketProvider";
-import { checkUnreadMessages } from "@/actions/useractions";
+import { checkUnreadMessages, checkUnreadNotifications } from "@/actions/useractions";
 
 import {
   Home,
@@ -18,7 +18,8 @@ import {
   Menu,
   Trophy,
   Moon,
-  Sun
+  Sun,
+  LogOut
 } from "lucide-react";
 import Link from "next/link";
 import { useTheme } from "./ThemeProvider";
@@ -30,7 +31,9 @@ const Sidebar = () => {
   const { data: session } = useSession();
   const { socket } = useSocket();
   const [hasUnread, setHasUnread] = useState(false);
+  const [hasUnreadNotif, setHasUnreadNotif] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
 
   // Fetch initial unread count and listen for new live messages
   useEffect(() => {
@@ -56,10 +59,34 @@ const Sidebar = () => {
     }
   }, [session?.user?.id, socket]);
 
-  // Clear unread dot automatically when navigating into the Chat page
+  // Fetch initial unread notifications and listen for real-time notification events
+  useEffect(() => {
+    if (session?.user?.email) {
+      checkUnreadNotifications(session.user.email).then(setHasUnreadNotif);
+
+      const onNewNotification = () => {
+        setHasUnreadNotif(true);
+      };
+
+      if (socket) {
+        socket.on('new_notification', onNewNotification);
+      }
+
+      return () => {
+        if (socket) {
+          socket.off('new_notification', onNewNotification);
+        }
+      };
+    }
+  }, [session?.user?.email, socket]);
+
+  // Clear unread dots automatically when navigating into Chat or Notification pages
   useEffect(() => {
     if (pathname.startsWith('/Chat')) {
       setHasUnread(false);
+    }
+    if (pathname.startsWith('/Notification')) {
+      setHasUnreadNotif(false);
     }
   }, [pathname]);
 
@@ -118,8 +145,11 @@ const Sidebar = () => {
                 ) : (
                   <Icon className={`w-7 h-7 ${isActive ? 'stroke-[2.5px]' : 'stroke-2'}`} />
                 )}
-                {/* Notification Unread Dot */}
+                {/* Unread Dots */}
                 {label === "Messages" && hasUnread && (
+                    <span className="absolute top-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-white dark:border-black shadow-[0_0_10px_rgba(34,197,94,0.7)] animate-pulse"></span>
+                )}
+                {label === "Notification" && hasUnreadNotif && (
                     <span className="absolute top-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-white dark:border-black shadow-[0_0_10px_rgba(34,197,94,0.7)] animate-pulse"></span>
                 )}
               </div>
@@ -131,7 +161,7 @@ const Sidebar = () => {
       </nav>
 
       {/* Bottom More Menu */}
-      <div className="mt-auto space-y-2">
+      <div className="mt-auto space-y-2 relative">
         <button
           onClick={toggleTheme}
           className="w-full flex items-center gap-4 px-3 py-3 rounded-2xl font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-neutral-900 dark:hover:text-white transition-all duration-200"
@@ -140,13 +170,25 @@ const Sidebar = () => {
           <span className={`${isCollapsed ? 'hidden' : 'hidden lg:block'} text-base`}>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
         </button>
 
-        <Link
-          href={"/more"}
-          className="flex items-center gap-4 px-3 py-3 rounded-2xl font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-neutral-900 dark:hover:text-white transition-all duration-200"
+        <button
+          onClick={() => setShowMoreMenu(!showMoreMenu)}
+          className="w-full flex items-center gap-4 px-3 py-3 rounded-2xl font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-neutral-900 dark:hover:text-white transition-all duration-200"
         >
           <Menu className="w-7 h-7" />
           <span className={`${isCollapsed ? 'hidden' : 'hidden lg:block'} text-base`}>More</span>
-        </Link>
+        </button>
+
+        {showMoreMenu && (
+          <div className={`absolute bottom-16 ${isCollapsed ? 'left-4 w-[160px]' : 'left-0 w-[200px]'} bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 rounded-2xl shadow-xl flex flex-col p-2 z-50 mb-2`}>
+            <button
+              onClick={() => signOut({ callbackUrl: '/login' })}
+              className="flex items-center gap-3 px-4 py-3 rounded-xl text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 font-medium transition-colors w-full"
+            >
+              <LogOut className="w-5 h-5" />
+              <span>Log out</span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
