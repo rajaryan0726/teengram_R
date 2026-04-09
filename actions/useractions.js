@@ -67,7 +67,10 @@ export const updateProfile = async (data, oldusername) => {
 export const fetchotheruser = async (email) => {
     await connectDb();
     console.log("fetching all the users");
-    let users = await User.find({ email: { $ne: email } }).lean();
+    let users = await User.find({ 
+        email: { $ne: email },
+        role: { $nin: ['SUPER_ADMIN', 'HEAD_ADMIN', 'ADMIN', 'SUB_ADMIN'] }
+    }).lean();
     return users.map(user => serializeDoc(user));
 }
 
@@ -83,6 +86,7 @@ export const searchUsersAction = async (query, currentUserEmail) => {
         const users = await User.find({
             $and: [
                 { email: { $ne: currentUserEmail } }, // Exclude current user
+                { role: { $nin: ['SUPER_ADMIN', 'HEAD_ADMIN', 'ADMIN', 'SUB_ADMIN'] } }, // Exclude admins
                 {
                     $or: [
                         { username: { $regex: regex } },
@@ -242,17 +246,29 @@ export const fetchFollowingAction = async (useremail) => {
         .select('email username name profilepic')
         .lean();
 
-    // 4. Map back to the structure expected by frontend, enriching with username/name
-    return f.map(doc => {
+    // 4. Clean up orphans and map valid ones
+    const validFriends = [];
+    const orphanedIds = [];
+
+    for (const doc of f) {
         const userDetails = users.find(u => u.email === doc.reciever_email);
-        return {
-            ...serializeDoc(doc),
-            sender_username: userDetails?.username || doc.reciever_email.split('@')[0], // Fallback
-            sender_name: userDetails?.name,
-            // We might want to use the latest profile pic from User collection instead of Friends snapshot
-            sender_profilepic: userDetails?.profilepic || doc.sender_profilepic
-        };
-    });
+        if (userDetails) {
+            validFriends.push({
+                ...serializeDoc(doc),
+                sender_username: userDetails.username,
+                sender_name: userDetails.name,
+                sender_profilepic: userDetails.profilepic
+            });
+        } else {
+            orphanedIds.push(doc._id);
+        }
+    }
+
+    if (orphanedIds.length > 0) {
+        await Friends.deleteMany({ _id: { $in: orphanedIds } });
+    }
+
+    return validFriends;
 }
 
 // NEW: Fetch "Followers" (People who sent requests to me AND I accepted)
@@ -274,15 +290,28 @@ export const fetchFollowersAction = async (useremail) => {
         .select('email username name profilepic')
         .lean();
 
-    return f.map(doc => {
+    const validFollowers = [];
+    const orphanedIds = [];
+
+    for (const doc of f) {
         const userDetails = users.find(u => u.email === doc.sender_email);
-        return {
-            ...serializeDoc(doc),
-            sender_username: userDetails?.username || doc.sender_email.split('@')[0],
-            sender_name: userDetails?.name,
-            sender_profilepic: userDetails?.profilepic || doc.sender_profilepic
-        };
-    });
+        if (userDetails) {
+            validFollowers.push({
+                ...serializeDoc(doc),
+                sender_username: userDetails.username,
+                sender_name: userDetails.name,
+                sender_profilepic: userDetails.profilepic
+            });
+        } else {
+            orphanedIds.push(doc._id);
+        }
+    }
+
+    if (orphanedIds.length > 0) {
+        await Friends.deleteMany({ _id: { $in: orphanedIds } });
+    }
+
+    return validFollowers;
 }
 
 //Upload wriiten_post

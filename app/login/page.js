@@ -1,21 +1,42 @@
 "use client"
-import React, { useState, useEffect } from 'react'
-import { useSession, signIn } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import React, { useState, useEffect, Suspense } from 'react'
+import { useSession, signIn, signOut } from 'next-auth/react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link';
 
-const page = () => {
+const LoginContent = () => {
   const { data: session } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [code, setCode] = useState('');
+  const [showCodeInput, setShowCodeInput] = useState(false);
   const [loading, setLoading] = useState(false);
+  
+  const errorMsg = searchParams.get('error');
 
   useEffect(() => {
     document.title = "Login - TeenGram"
-    if (session) {
-      router.push('/feed')
+    if (errorMsg === 'deleted') {
+       alert("Your account no longer exists in our system. You have been logged out.");
     }
-  }, [router, session])
+    if (session) {
+      if (session?.user?.status === "deleted") {
+         signOut({ redirect: false }).then(() => {
+            router.push('/login');
+         });
+      } else if (session?.user?.status === "pending") {
+         alert("Your account is not verified yet. Please complete registration and wait for approval.");
+         // Note: the middleware prevents them from going to /feed.
+      } else {
+         if (session?.user?.role === "SUPER_ADMIN") router.push('/head-admin')
+         else if (session?.user?.role === "ADMIN") router.push('/admin-panel')
+         else if (session?.user?.role === "SUB_ADMIN") router.push('/sub-admin-panel')
+         else router.push('/feed')
+      }
+    }
+  }, [router, session, errorMsg])
 
   const handleTestingLogin = async (e) => {
     e.preventDefault();
@@ -24,11 +45,16 @@ const page = () => {
     const res = await signIn("credentials", {
       username,
       password,
+      code,
       redirect: false
     });
     
     if (res?.error) {
-       alert("Login failed");
+       if (res.error === "Verification Code Required") {
+           setShowCodeInput(true);
+       } else {
+           alert(res.error || "Login failed");
+       }
        setLoading(false);
     } else {
        router.push('/feed');
@@ -48,7 +74,7 @@ const page = () => {
           <h1 className="text-3xl lg:text-4xl text-slate-400 font-serif font-semibold mb-6 text-center lg:text-left">TeenGram</h1>
           <form onSubmit={handleTestingLogin}>
             <div className="mb-4">
-              <label className="block text-gray-600">Username</label>
+              <label className="block text-gray-600">Username or Email</label>
               <input 
                 type="text" 
                 id="username" 
@@ -71,33 +97,43 @@ const page = () => {
                 className="text-white w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500 bg-gray-900" 
               />
             </div>
+            
+            {showCodeInput && (
+              <div className="mb-4 bg-blue-900/40 border border-blue-500 p-4 rounded-lg animate-pulse shadow-inner">
+                <label className="block text-blue-300 font-bold mb-1">Verification Code Required (Sub-Admins Only)</label>
+                <input 
+                  type="text" 
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  placeholder="Enter your verification code"
+                  className="text-white w-full border border-blue-500 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-gray-900" 
+                  required={showCodeInput}
+                />
+              </div>
+            )}
+            
             {/* <!-- Remember Me Checkbox --> */}
             <div className="mb-4 flex items-center">
               <input type="checkbox" id="remember" name="remember" className="text-blue-500" />
               <label className="text-gray-600 ml-2">Remember Me</label>
             </div>
-            {/* <!-- Forgot Password Link --> */}
-            <div className="mb-6 text-blue-500">
-              <a href="#" className="hover:underline">Forgot Password?</a>
-            </div>
+            
             {/* <!-- Login Button --> */}
             <button
               type="submit"
               disabled={loading}
-              className="bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white font-semibold rounded-md py-2 px-4 w-full text-center block"
+              className="bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white font-semibold rounded-md py-2 px-4 w-full text-center block mb-4"
             >
               {loading ? 'Logging in...' : 'Login'}
             </button>
+            <div className="flex justify-between text-sm text-blue-500 mb-6">
+                <Link href="/register" className="hover:underline">Register as User</Link>
+                <Link href="/admin-setup" className="hover:underline">Admin Setup (Institutions)</Link>
+            </div>
           </form>
           {/* <!-- Sign up  Link --> */}
-          <div className="mt-6 flex flex-col items-center gap-3">
-            <button
-              className="w-full max-w-xs font-bold shadow-sm rounded-lg py-3 bg-gray-800 text-white flex items-center justify-center transition-all duration-300 ease-in-out focus:outline-none hover:bg-gray-900 cursor-pointer"
-              onClick={() => signIn("github")}
-            >
-              <span>Sign in with GitHub</span>
-            </button>
-
+          <div className="mt-2 flex flex-col items-center gap-3">
+            
             <button
               className="w-full max-w-xs font-bold shadow-sm rounded-lg py-3 bg-white border border-gray-200 text-gray-800 flex items-center justify-center transition-all duration-300 ease-in-out focus:outline-none hover:bg-gray-50 cursor-pointer"
               onClick={() => signIn("google")}
@@ -119,4 +155,12 @@ const page = () => {
   )
 }
 
-export default page
+const Page = () => {
+    return (
+        <Suspense fallback={<div className="h-screen flex justify-center items-center">Loading...</div>}>
+            <LoginContent />
+        </Suspense>
+    )
+}
+
+export default Page

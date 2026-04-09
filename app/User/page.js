@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import Sidebar from '../Components/Sidebar'
-import { fetchuser, fetchFollowingAction, fetchFollowersAction, upload_written_post, fetchpost, toggleLikePost, addComment, replyToComment, uploadMoment, uploadShort } from '@/actions/useractions'
+import { fetchuser, fetchFollowingAction, fetchFollowersAction, upload_written_post, fetchpost, toggleLikePost, addComment, replyToComment, uploadMoment, uploadShort, updateProfile } from '@/actions/useractions'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { sendPrompt } from '@/utils/sendPrompt'
@@ -11,7 +11,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Image as ImageIcon, Video, X, Heart, MessageCircle, Send } from 'lucide-react'
 import { io } from 'socket.io-client'
 
-const page = () => {
+const Page = () => {
   const router = useRouter()
   const { data: session } = useSession()
   const [form, setform] = useState({})
@@ -22,6 +22,10 @@ const page = () => {
   const [post, setpost] = useState(false)
   const [seefollower, setseefollower] = useState(true);
   const [socket, setSocket] = useState(null)
+
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editForm, setEditForm] = useState({});
+  const [isSaving, setIsSaving] = useState(false);
 
   const [Written_form, setWritten_form] = useState({})//to store the content for a written post
 
@@ -42,11 +46,23 @@ const page = () => {
   const [shortForm, setShortForm] = useState({});
 
   useEffect(() => {
+    let pollingInterval;
+
     if (!session) {
       router.push("/login")
     }
     else {
       getdata()
+
+      // Realtime syncing just for Followers / Following list
+      const pollFollowers = async () => {
+        let followingData = await fetchFollowingAction(session.user.email);
+        setfollowing(followingData || []);
+        let followersData = await fetchFollowersAction(session.user.email);
+        setfollowers(followersData || []);
+      };
+
+      pollingInterval = setInterval(pollFollowers, 5000); // 5s interval
 
       // Initialize Socket
       const newSocket = io('http://localhost:3000', {
@@ -90,6 +106,7 @@ const page = () => {
       });
 
       return () => {
+        if (pollingInterval) clearInterval(pollingInterval);
         newSocket.disconnect();
       }
     }
@@ -322,6 +339,45 @@ const page = () => {
   };
 
 
+  const handleProfilePicUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 3 * 1024 * 1024) {
+      alert("File size too large! Please upload under 3MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setEditForm({ ...editForm, profilepic: reader.result });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    setIsSaving(true);
+    try {
+      const data = new FormData();
+      data.append('email', form.email);
+      data.append('bio', editForm.bio || '');
+      data.append('about', editForm.about || '');
+      data.append('interests', editForm.interests || '');
+      data.append('profilepic', editForm.profilepic || '');
+      
+      await updateProfile(data, form.username);
+      setform({ ...form, ...editForm });
+      setIsEditModalOpen(false);
+      alert("Profile updated successfully!");
+    } catch(err) {
+      console.error(err);
+      alert("Failed to update profile.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <div className="flex bg-gray-50 dark:bg-black h-screen w-full overflow-hidden">
       <Sidebar className="flex-1" />
@@ -367,23 +423,9 @@ const page = () => {
                     </div>
 
                     <div className="flex gap-2 md:gap-3 w-full md:w-auto">
-                      <Link href={{
-                        pathname: "/Updateuser",
-                        query: { email: form.email }
-                      }} className="flex-1">
-                        <button className="w-full px-4 md:px-6 py-2 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 text-gray-700 dark:text-neutral-300 text-sm md:text-base font-semibold rounded-xl hover:bg-gray-50 dark:hover:bg-neutral-700 hover:border-gray-300 transition-all shadow-sm">
+                        <button onClick={() => { setEditForm({ ...form }); setIsEditModalOpen(true); }} className="w-full px-4 md:px-6 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm md:text-base font-semibold rounded-xl hover:shadow-lg transition-all shadow-md">
                           Edit Profile
                         </button>
-                      </Link>
-
-                      <Link href={{
-                        pathname: "/verify",
-                        query: { name: form.name, institute_name: form.institute_name }
-                      }} className="flex-1">
-                        <button className="w-full px-4 md:px-6 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-sm md:text-base font-semibold rounded-xl hover:shadow-lg hover:opacity-90 transition-all shadow-md">
-                          Verify
-                        </button>
-                      </Link>
                     </div>
                   </div>
 
@@ -882,8 +924,163 @@ const page = () => {
           </div>
         </div>
       </main>
+
+      {/* --- Edit Profile Modal --- */}
+      <AnimatePresence>
+        {isEditModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              className="bg-white dark:bg-neutral-900 rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col border border-gray-100 dark:border-neutral-800"
+            >
+              <div className="flex justify-between items-center p-6 border-b border-gray-100 dark:border-neutral-800">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Edit Profile</h2>
+                <button
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-neutral-800 rounded-full transition-colors"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-6 md:p-8 custom-scrollbar">
+                <form id="editProfileForm" onSubmit={handleEditSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {/* Left Column: Editable Fields */}
+                  <div className="space-y-6">
+                    <h3 className="text-lg font-semibold text-blue-600 dark:text-blue-400 border-b border-gray-100 dark:border-neutral-800 pb-2">Editable Information</h3>
+                    
+                    {/* Profile Picture */}
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Profile Picture</label>
+                      <div className="flex items-center gap-4">
+                        <img src={editForm.profilepic || "https://placehold.co/150x150/png"} alt="Preview" className="w-16 h-16 rounded-full object-cover border-2 border-gray-200 dark:border-neutral-700" />
+                        <label className="flex items-center justify-center px-4 py-2 bg-blue-50 text-blue-600 rounded-xl cursor-pointer hover:bg-blue-100 transition-colors font-semibold text-sm border border-blue-200">
+                          <ImageIcon size={18} className="mr-2" />
+                          Upload Image
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleProfilePicUpload}
+                            className="hidden"
+                          />
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Bio / Description */}
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Profile Description (Bio)</label>
+                      <textarea
+                        value={editForm.bio || ''}
+                        onChange={(e) => setEditForm({...editForm, bio: e.target.value})}
+                        className="w-full px-4 py-2.5 bg-gray-50 dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all text-sm"
+                        rows="2"
+                        maxLength="150"
+                        placeholder="A short punchy bio..."
+                      ></textarea>
+                    </div>
+
+                    {/* Interests */}
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Your Interests</label>
+                      <input
+                        type="text"
+                        value={editForm.interests || ''}
+                        onChange={(e) => setEditForm({...editForm, interests: e.target.value})}
+                        className="w-full px-4 py-2.5 bg-gray-50 dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all text-sm"
+                        placeholder="e.g. Coding, Football, Reading"
+                      />
+                    </div>
+
+                    {/* About Them */}
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">About You</label>
+                      <textarea
+                        value={editForm.about || ''}
+                        onChange={(e) => setEditForm({...editForm, about: e.target.value})}
+                        className="w-full px-4 py-2.5 bg-gray-50 dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all text-sm"
+                        rows="4"
+                        placeholder="Tell us a bit more about yourself..."
+                      ></textarea>
+                    </div>
+                  </div>
+
+                  {/* Right Column: Read-Only Registration Info */}
+                  <div className="bg-gray-50 dark:bg-neutral-800/50 p-6 rounded-2xl border border-gray-100 dark:border-neutral-800 space-y-4">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white border-b border-gray-200 dark:border-neutral-700 pb-2 mb-4">Registration Details</h3>
+                    <p className="text-xs text-amber-600 dark:text-amber-400 font-medium mb-4 flex items-center gap-1">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                      These fields are locked and cannot be changed.
+                    </p>
+
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="block text-xs font-bold text-gray-400 dark:text-neutral-500 uppercase tracking-wider mb-1">Full Name</span>
+                        <span className="font-medium text-gray-900 dark:text-white">{form.name}</span>
+                      </div>
+                      <div>
+                        <span className="block text-xs font-bold text-gray-400 dark:text-neutral-500 uppercase tracking-wider mb-1">Username</span>
+                        <span className="font-medium text-gray-900 dark:text-white">@{form.username}</span>
+                      </div>
+                      <div className="col-span-2">
+                        <span className="block text-xs font-bold text-gray-400 dark:text-neutral-500 uppercase tracking-wider mb-1">Email</span>
+                        <span className="font-medium text-gray-900 dark:text-white">{form.email}</span>
+                      </div>
+                      <div>
+                        <span className="block text-xs font-bold text-gray-400 dark:text-neutral-500 uppercase tracking-wider mb-1">Age</span>
+                        <span className="font-medium text-gray-900 dark:text-white">{form.age || 'N/A'}</span>
+                      </div>
+                      <div>
+                        <span className="block text-xs font-bold text-gray-400 dark:text-neutral-500 uppercase tracking-wider mb-1">State</span>
+                        <span className="font-medium text-gray-900 dark:text-white">{form.state || 'N/A'}</span>
+                      </div>
+                      <div className="col-span-2 mt-2 pt-4 border-t border-gray-200 dark:border-neutral-700">
+                        <span className="block text-xs font-bold text-gray-400 dark:text-neutral-500 uppercase tracking-wider mb-1">Institution</span>
+                        <span className="font-medium text-indigo-600 dark:text-indigo-400">{form.institute_name}</span>
+                      </div>
+                      <div className="col-span-2">
+                        <span className="block text-xs font-bold text-gray-400 dark:text-neutral-500 uppercase tracking-wider mb-1">Academic Path</span>
+                        <span className="font-medium text-gray-900 dark:text-white">
+                          {form.academic_info?.course ? `${form.academic_info.course} (${form.academic_info.year})` : form.academic_info?.standard_class || 'N/A'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </form>
+              </div>
+
+              <div className="p-6 border-t border-gray-100 dark:border-neutral-800 bg-gray-50 dark:bg-neutral-900 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="px-6 py-2.5 rounded-xl font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-neutral-800 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  form="editProfileForm"
+                  disabled={isSaving}
+                  className="px-8 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center min-w-[120px]"
+                >
+                  {isSaving ? (
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  ) : 'Save Changes'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
 
-export default page
+export default Page

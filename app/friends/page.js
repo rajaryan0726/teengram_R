@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import Sidebar from '../Components/Sidebar'
-const page = () => {
+const Page = () => {
   const [friends, setfriends] = useState([])//other users are fetched and stored in array here
   const { data: session } = useSession()
   useEffect(() => {
@@ -65,4 +65,4 @@ const page = () => {
   )
 }
 
-export default page
+export default Page

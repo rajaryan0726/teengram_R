@@ -38,7 +38,7 @@ const SegmentedCircle = ({ count, hasViewedAll, profilepic }) => {
     );
 }
 
-const page = () => {
+const Page = () => {
   const router = useRouter()
   const { data: session } = useSession()
   const [form, setform] = useState({})
@@ -475,4 +475,4 @@ const page = () => {
   )
 }
 
-export default page
+export default Page
