@@ -1,56 +1,105 @@
-<<<<<<< HEAD
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# TeenGram 🚀
 
-## Getting Started
-making the web based social media patform which is specially for under age people means students having thr age under 18
-First, run the development server:
+**TeenGram** is an exclusive, safe, and engaging web-based social media platform designed specifically for students under the age of 18. The platform ensures a secure environment for teenagers to connect, share content, communicate in real-time, and participate in school-based competitions.
 
+## 🌟 Key Features
+
+### 🔐 Authentication & Security
+- Secure registration and login flow specifically regulated for underage users.
+- Email verification system using `nodemailer`.
+- Advanced authentication and session management using `NextAuth`.
+- Secure password hashing using `bcryptjs`.
+
+### 📱 Social Feed & Content Creation
+- **Feed:** A dynamic timeline showing posts from friends and followed users.
+- **Content Creation:** Tools to create new posts with images and text.
+- **Shorts:** A dedicated feature for discovering and sharing short-form vertical video content, similar to modern video reels.
+- **Media Management:** Efficient image and media uploading via `cloudinary`.
+
+### 💬 Real-Time Communication
+- **Live Chat:** Real-time, instant messaging between users powered by `Socket.io` and `Redis`.
+- **Friends System:** Send requests, accept friends, and manage your followers and following lists.
+- **Notifications:** Real-time alerts for incoming friend requests, messages, and interactions.
+
+### 🏆 Events & Competitions
+- **School Competitions:** Dedicated spaces for schools to host virtual contests, quizzes, and competitions.
+- **Teen Arena:** A community engagement arena with leaderboards, challenges, and specialized events.
+
+### ⚙️ Multi-Tiered Administration Setup
+TeenGram employs a hierarchical administrative panel to securely manage user data, credentials, and platform moderation:
+- **Super Admin & Head Admin:** Oversees the platform's overarching metrics and top-level user management.
+- **Admin & Sub-Admin Panels:** Allows designated moderators (e.g., school officials) to verify accounts, manage student credentials, and generate structured reports / credential PDFs utilizing `jspdf` and `jspdf-autotable`.
+
+### 🔍 Search & Discoverability
+- Powerful built-in search engine to easily find friends, posts, and ongoing events.
+
+---
+
+## 🛠️ Technology Stack
+
+**Frontend:**
+- [Next.js (App Router)](https://nextjs.org/) - React framework for production
+- [React 19](https://reactjs.org/)
+- [Tailwind CSS v4](https://tailwindcss.com/) - Utility-first styling
+- [Framer Motion](https://www.framer.com/motion/) - For liquid-smooth UI animations
+- [Lucide React](https://lucide.dev/) - Iconography
+
+**Backend & Database:**
+- [Node.js](https://nodejs.org/en/) & [Express](https://expressjs.com/)
+- [MongoDB](https://www.mongodb.com/) via [Mongoose](https://mongoosejs.com/) - Database ORM
+- [Redis](https://redis.io/) - Fast in-memory data store for caching and live data
+- [Socket.io](https://socket.io/) - Bidirectional real-time event communication
+
+**Utilities & Integrations:**
+- **AI integration:** OpenAI integration for smart moderation and recommendations.
+- **Asset generation:** jsPDF and html2canvas for extracting tabular credential data.
+
+---
+
+## 🚀 Getting Started
+
+Follow these instructions to set up the project locally.
+
+### Prerequisites
+- Node.js (v18.x or later)
+- MongoDB running locally or a MongoDB Atlas URI
+- Redis server running locally or via a cloud provider
+- Cloudinary Account
+- SMTP Email Credentials
+
+### Installation
+
+1. **Clone the repository:**
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/krishnadoes/teengram.git
+cd teengram
 ```
 
+2. **Install dependencies:**
+```bash
+npm install
+# or
+yarn install
+```
+
+3. **Configure Environment Variables:**
+Create a `.env` file in the root directory and populate it with your corresponding keys for MongoDB, Redis, JWT Secrets, NextAuth URLs, Cloudinary URIs, etc.
+
+4. **Run the development server:**
+```bash
+npm run dev
+```
+Alternatively, for the full custom Node.js server (required for WebSockets/Socket.io):
+```bash
+npm run dev:full
+```
+
+5. **Open the App:**
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+## 🤝 Contribution & Links
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Repository:** https://github.com/krishnadoes/teengram
+- **Bug tracker:** https://github.com/krishnadoes/teengram/issues
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-=======
-# teengram
-last year project
->>>>>>> 88c86c41658c08c9a687426e84d64bf8fe95fed4
-
-
-did changes with the json 
-
-  <!-- "start": "NODE_ENV=production node server.cjs",
-   "dev": "node server.cjs", -->
-   
-   <div className='flex flex-row gap-20 w-full bg-amber-300'>
-              <div className='w-1/2'>Your post will come here</div>
-              {seefollower ? <div className='w-1/2'>Your foollower heheheheh</div> : <div className='w-1/2'>Your following will be here and when click on followe you will see follower</div>}
-
-            </div>
-            <!-- managing the multiple github accounts -->
-            another check
-            another check
+Feel free to raise issues or submit pull requests.
