@@ -21,7 +21,15 @@ export const registerUser = async (formData) => {
     
     // Check if email or username already exists
     const existingEmail = await User.findOne({ email: data.email }).lean();
-    if (existingEmail) return { success: false, error: "Email already registered" };
+    let isPendingStub = false;
+    if (existingEmail) {
+        if (existingEmail.status === 'pending' && !existingEmail.password) {
+            // It's an incomplete Google-Auth stub. We can overwrite it with this full registration.
+            isPendingStub = true;
+        } else {
+            return { success: false, error: "Email already registered" };
+        }
+    }
     
     const existingUsername = await User.findOne({ username: data.username }).lean();
     if (existingUsername) return { success: false, error: "Username already taken" };
@@ -66,8 +74,7 @@ export const registerUser = async (formData) => {
         }
     }
 
-    // Create new user with pending status
-    const newUser = await User.create({
+    const userPayload = {
         email: data.email,
         username: data.username,
         name: data.name,
@@ -83,7 +90,15 @@ export const registerUser = async (formData) => {
         role: 'USER',
         id_card_url: uploaded_id_card_url,           // Fixed
         id_card_file_id: uploaded_id_card_id         // Fixed
-    });
+    };
+
+    if (isPendingStub) {
+        // Update the existing stub
+        await User.findByIdAndUpdate(existingEmail._id, userPayload);
+    } else {
+        // Create new user with pending status
+        await User.create(userPayload);
+    }
     
     return { success: true, message: "Registration submitted successfully. Waiting for verification." };
 };

@@ -1,8 +1,8 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import { getPendingInstitutions, getVerifiedInstitutions, verifyInstitution, rejectInstitution } from '@/actions/superAdminActions';
-import { Loader2, Check, X, Eye, FileText, ChevronRight, GraduationCap } from 'lucide-react';
+import { Loader2, Check, X, Eye, FileText, ChevronRight, GraduationCap, LogOut } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const HeadAdminDashboard = () => {
@@ -226,9 +226,14 @@ const HeadAdminDashboard = () => {
         <div className="min-h-screen bg-slate-50 pb-20 font-sans">
             {/* Header */}
             <div className="bg-blue-900 text-white pt-10 pb-6 px-6 shadow-md">
-                <div className="max-w-6xl mx-auto">
-                    <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Super Admin Hub</h1>
-                    <p className="text-blue-200 mt-2">Manage and Verify TeenGram Institutions</p>
+                <div className="max-w-6xl mx-auto flex flex-col sm:flex-row justify-between sm:items-end gap-4">
+                    <div>
+                        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Super Admin Hub</h1>
+                        <p className="text-blue-200 mt-2">Manage and Verify TeenGram Institutions</p>
+                    </div>
+                    <button onClick={() => signOut({ callbackUrl: '/login' })} className="inline-flex items-center justify-center gap-2 px-5 py-2 bg-red-600 text-white hover:bg-red-700 border border-red-500 rounded-lg text-sm font-bold shadow transition-colors active:scale-95 w-fit">
+                        <LogOut className="w-4 h-4"/> Logout
+                    </button>
                 </div>
             </div>
 

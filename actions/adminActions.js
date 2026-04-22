@@ -26,6 +26,19 @@ export const registerInstitution = async (data, adminEmail) => {
             role: 'USER', // Will be upgraded to ADMIN upon verification
             status: 'pending'
         });
+    } else {
+        // Enforce strictly one email for one purpose
+        if (adminUser.status === 'verified' && adminUser.role === 'USER') {
+            return { success: false, error: "This email is already registered as a user account. Please use a dedicated official email for your institution." };
+        }
+        if (['SUB_ADMIN', 'SUPER_ADMIN', 'HEAD_ADMIN', 'ADMIN'].includes(adminUser.role)) {
+            // Let HEAD_ADMIN/ADMIN pass ONLY IF they are trying to register an institution?
+            // Actually, if they are already HEAD_ADMIN, they already have an institution.
+            // But just in case:
+            if (adminUser.role !== 'USER' && adminUser.role !== 'ADMIN' && adminUser.role !== 'HEAD_ADMIN') {
+                 return { success: false, error: "This email is already bound to another administrative role." };
+            }
+        }
     }
 
     // Check if user already registered an institution

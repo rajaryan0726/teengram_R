@@ -6,8 +6,10 @@ const NotificationSchema = new Schema({
     sender_email: { type: String, required: true },    // Who triggered it
     sender_username: { type: String },
     sender_profilepic: { type: String },
-    type: { type: String, required: true, enum: ['like', 'comment', 'friend_request', 'follow'] },
+    type: { type: String, required: true, enum: ['like', 'comment', 'friend_request', 'follow', 'community_invite', 'community_join_request'] },
     postId: { type: String }, // Optional, for likes/comments
+    communityId: { type: String }, // Optional, for community invites/requests
+    communityName: { type: String }, // Optional, for UI rendering
     text: { type: String },   // Display text
     read: { type: Boolean, default: false },
     createdAt: { type: Date, default: Date.now },

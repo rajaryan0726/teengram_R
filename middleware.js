@@ -26,7 +26,7 @@ export default withAuth(
     }
 
     // General protected routes for verified users
-    const protectedRoutes = ["/feed", "/Chat", "/create", "/Notification", "/search", "/teenarena", "/schoolCompetitions", "/friends", "/Updateuser", "/User", "/ViewFriends"];
+    const protectedRoutes = ["/feed", "/Chat", "/create", "/Notification", "/search", "/teenarena", "/schoolCompetitions", "/friends", "/Updateuser", "/User", "/ViewFriends", "/community"];
     const isProtectedRoute = protectedRoutes.some((route) => path.startsWith(route) || path === "/");
 
     if (isProtectedRoute) {
@@ -42,10 +42,7 @@ export default withAuth(
             return NextResponse.redirect(new URL("/login?error=unverified", req.url));
         }
         
-        // Admins shouldn't be browsing the user feed, redirect to their dashboards
-        if(token?.role === "SUPER_ADMIN") return NextResponse.redirect(new URL("/head-admin", req.url));
-        if(token?.role === "ADMIN") return NextResponse.redirect(new URL("/admin-panel", req.url));
-        if(token?.role === "SUB_ADMIN") return NextResponse.redirect(new URL("/sub-admin-panel", req.url));
+
     }
 
     return NextResponse.next();
@@ -76,6 +73,7 @@ export const config = {
     "/ViewFriends/:path*",
     "/head-admin/:path*",
     "/admin-panel/:path*",
-    "/sub-admin-panel/:path*"
+    "/sub-admin-panel/:path*",
+    "/community/:path*"
   ],
 };

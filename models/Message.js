@@ -10,10 +10,12 @@ const MessageSchema = new Schema({
     },
     content: {
       type: String,
-      required: true,
+      required: false,
       trim: true,
       maxLength: 1000, 
     },
+    mediaUrl: { type: String }, // Base64 or external URL
+    mediaType: { type: String }, // 'image' or 'video'
     // Feature Field
     readBy: [
       {

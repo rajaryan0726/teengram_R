@@ -19,7 +19,10 @@ import {
   Trophy,
   Moon,
   Sun,
-  LogOut
+  LogOut,
+  ShieldCheck,
+  ShieldHalf,
+  Users
 } from "lucide-react";
 import Link from "next/link";
 import { useTheme } from "./ThemeProvider";
@@ -99,8 +102,18 @@ const Sidebar = () => {
     { Icon: Heart, label: "Notification", path: "/Notification" },
     { Icon: PlusSquare, label: "Create", path: "/create" },
     { Icon: Trophy, label: "Arena", path: "/teenarena" },
-    { Icon: User, label: "Profile", path: "/User" },
+    { Icon: Users, label: "Community", path: "/community" },
   ];
+
+  if (session?.user?.role === 'HEAD_ADMIN' || session?.user?.role === 'SUPER_ADMIN') {
+    navItems.push({ Icon: ShieldCheck, label: "Admin Panel", path: "/head-admin" });
+  } else if (session?.user?.role === 'ADMIN') {
+    navItems.push({ Icon: ShieldCheck, label: "Admin Panel", path: "/admin-panel" });
+  } else if (session?.user?.role === 'SUB_ADMIN') {
+    navItems.push({ Icon: ShieldHalf, label: "Sub-Admin Panel", path: "/sub-admin-panel" });
+  }
+
+  navItems.push({ Icon: User, label: "Profile", path: "/User" });
 
   return (
     <div

@@ -43,6 +43,13 @@ export default function SocketProvider({ children }) {
             socket.emit('register_user', session.user.id);
             setIsConnected(true);
 
+            // Re-register on socket reconnects (important for Cloudflare tunnels)
+            const onConnect = () => {
+                socket.emit('register_user', session.user.id);
+                setIsConnected(true);
+            };
+            socket.on('connect', onConnect);
+
             // Online/Offline status listeners
             const onUserOnline = (userId) => {
                 setOnlineUsers(prev => new Set(prev).add(userId));
@@ -65,6 +72,7 @@ export default function SocketProvider({ children }) {
             socket.on('get_online_users', onGetOnlineUsers);
 
             return () => {
+                socket.off('connect', onConnect);
                 socket.off('user_online', onUserOnline);
                 socket.off('user_offline', onUserOffline);
                 socket.off('get_online_users', onGetOnlineUsers);

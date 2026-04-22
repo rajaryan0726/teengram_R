@@ -1,9 +1,10 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import { getAdminInstitution, getSubAdmins, createSubAdmin, deleteSubAdmin, updateSubAdmin, getVerifiedUsersBySubAdmin } from '@/actions/adminActions';
-import { Loader2, UserPlus, Trash2, Edit2, Download, X, Save, Users, ChevronRight, FileText } from 'lucide-react';
+import { Loader2, UserPlus, Trash2, Edit2, Download, X, Save, Users, ChevronRight, FileText, LogOut, Home } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -182,9 +183,17 @@ const AdminPanel = () => {
                         <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Institution Hub</h1>
                         <p className="text-blue-200 mt-2 text-lg font-medium">{institution.institution_name}</p>
                     </div>
-                    <div className="mt-4 md:mt-0 inline-flex items-center gap-2 px-4 py-1.5 bg-green-500/20 text-green-300 border border-green-500/30 rounded-full text-sm font-semibold shadow-inner">
-                        <span className="w-2.5 h-2.5 bg-green-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(74,222,128,0.8)]"></span>
-                        Verified Institution
+                    <div className="mt-4 md:mt-0 flex items-center gap-4">
+                        <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-green-500/20 text-green-300 border border-green-500/30 rounded-full text-sm font-semibold shadow-inner">
+                            <span className="w-2.5 h-2.5 bg-green-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(74,222,128,0.8)]"></span>
+                            Verified Institution
+                        </div>
+                        <button onClick={() => window.location.href = '/'} className="inline-flex items-center gap-2 px-4 py-1.5 bg-blue-600 text-white hover:bg-blue-700 border border-blue-500 rounded-full text-sm font-bold shadow transition-colors active:scale-95">
+                            <Home className="w-4 h-4"/> Go to TeenGram
+                        </button>
+                        <button onClick={() => signOut({ callbackUrl: '/login' })} className="inline-flex items-center gap-2 px-4 py-1.5 bg-red-600 text-white hover:bg-red-700 border border-red-500 rounded-full text-sm font-bold shadow transition-colors active:scale-95">
+                            <LogOut className="w-4 h-4"/> Logout
+                        </button>
                     </div>
                 </div>
             </div>

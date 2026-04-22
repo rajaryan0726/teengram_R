@@ -1,7 +1,8 @@
 "use client"
 import React from 'react'
 import Sidebar from '../Components/Sidebar'
-import { fetchfriendrequest, accept_request, fetchNotifications, markNotificationsRead } from '@/actions/useractions'
+import { fetchfriendrequest, accept_request, fetchNotifications, markNotificationsRead, fetchuser } from '@/actions/useractions'
+import { joinInvitedCommunity, acceptCommunityRequest, rejectCommunityRequest } from '@/actions/communityActions'
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
@@ -47,6 +48,25 @@ const Page = () => {
     // Optimistic update
     setrequest(prev => prev.map(req => req._id === id ? { ...req, request_accepted: true } : req));
   }
+
+  const handleJoinInvite = async (communityId) => {
+    let u = await fetchuser(session.user.email);
+    await joinInvitedCommunity(u._id, communityId); 
+    getdata();
+    router.push(`/community/${communityId}`);
+  };
+
+  const handleAcceptJoinRequest = async (senderEmail, communityId) => {
+    let u = await fetchuser(session.user.email);
+    await acceptCommunityRequest(u._id, senderEmail, communityId);
+    getdata();
+  };
+  
+  const handleRejectJoinRequest = async (senderEmail, communityId) => {
+    let u = await fetchuser(session.user.email);
+    await rejectCommunityRequest(u._id, senderEmail, communityId);
+    getdata();
+  };
 
   if (loading) return <div className="text-center p-10 text-white">Loading...</div>;
 
@@ -144,13 +164,39 @@ const Page = () => {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-gray-800 dark:text-gray-200 leading-snug">
                     <span className="font-bold text-gray-900 dark:text-white">{n.sender_username || n.sender_email.split('@')[0]}</span> 
-                    {" "}{n.type === 'like' ? 'liked your post' : 'commented on your post'}
+                    {" "}
+                    {n.type === 'like' && 'liked your post'}
+                    {n.type === 'comment' && 'commented on your post'}
+                    {n.type === 'community_invite' && `invited you to join community "${n.communityName}"`}
+                    {n.type === 'community_join_request' && `requested to join your community "${n.communityName}"`}
                   </p>
+                  
                   {n.text && n.type === 'comment' && (
                     <div className="mt-1.5 p-2 bg-gray-50 dark:bg-neutral-800 rounded-xl border border-gray-100 dark:border-neutral-700">
                       <p className="text-xs text-gray-600 dark:text-gray-400 italic truncate">"{n.text}"</p>
                     </div>
                   )}
+
+                  {/* Actions for Community Invites / Requests */}
+                  {n.type === 'community_invite' && (
+                      <div className="mt-3">
+                          <button onClick={() => handleJoinInvite(n.communityId)} className="px-4 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition">
+                              Join Community
+                          </button>
+                      </div>
+                  )}
+
+                  {n.type === 'community_join_request' && (
+                      <div className="mt-3 flex gap-2">
+                          <button onClick={() => handleAcceptJoinRequest(n.sender_email, n.communityId)} className="px-4 py-1.5 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700 transition">
+                              Accept
+                          </button>
+                          <button onClick={() => handleRejectJoinRequest(n.sender_email, n.communityId)} className="px-4 py-1.5 bg-red-100 text-red-600 rounded-lg text-sm font-semibold hover:bg-red-200 transition">
+                              Reject
+                          </button>
+                      </div>
+                  )}
+
                   <p className="text-[10px] font-medium text-gray-400 mt-2 uppercase tracking-wider">{new Date(n.createdAt).toLocaleDateString()}</p>
                 </div>
               </div>

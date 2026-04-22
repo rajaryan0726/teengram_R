@@ -21,6 +21,7 @@ app.prepare().then(() => {
     // 2. Attach Socket.IO to the HTTP Server
     const io = new Server(httpServer, {
         path: '/api/socket',
+        maxHttpBufferSize: 1e8, // 100 MB max payload for large images/videos
         cors: {
             origin: "http://localhost:3000", // Allows connection from your frontend
             methods: ["GET", "POST"]

@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { sendPrompt } from '@/utils/sendPrompt'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Image as ImageIcon, Video, X, Heart, MessageCircle, Send } from 'lucide-react'
+import { Image as ImageIcon, Video, X, Heart, MessageCircle, Send, ShieldCheck } from 'lucide-react'
 import { io } from 'socket.io-client'
 
 const Page = () => {
@@ -1021,6 +1021,15 @@ const Page = () => {
                     </p>
 
                     <div className="grid grid-cols-2 gap-4 text-sm">
+                      {form.role && ['ADMIN', 'HEAD_ADMIN', 'SUPER_ADMIN', 'SUB_ADMIN'].includes(form.role) && (
+                        <div className="col-span-2 mb-2 p-3 bg-indigo-50/50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 rounded-xl flex items-center gap-2">
+                           <ShieldCheck className="w-5 h-5 text-indigo-600 dark:text-indigo-400"/>
+                           <div>
+                             <span className="block text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-0.5">Account Role</span>
+                             <span className="font-bold text-gray-900 dark:text-white capitalize">{form.role.replace('_', ' ').toLowerCase()} Tag</span>
+                           </div>
+                        </div>
+                      )}
                       <div>
                         <span className="block text-xs font-bold text-gray-400 dark:text-neutral-500 uppercase tracking-wider mb-1">Full Name</span>
                         <span className="font-medium text-gray-900 dark:text-white">{form.name}</span>

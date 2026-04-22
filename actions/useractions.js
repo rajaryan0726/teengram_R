@@ -86,7 +86,6 @@ export const searchUsersAction = async (query, currentUserEmail) => {
         const users = await User.find({
             $and: [
                 { email: { $ne: currentUserEmail } }, // Exclude current user
-                { role: { $nin: ['SUPER_ADMIN', 'HEAD_ADMIN', 'ADMIN', 'SUB_ADMIN'] } }, // Exclude admins
                 {
                     $or: [
                         { username: { $regex: regex } },
@@ -496,7 +495,7 @@ export const getMessagesForConversation = async (conversationId, userId) => {
 };
 
 
-export const saveMessageAndGetDetails = async (senderId, recipientOrConversationId, content) => {
+export const saveMessageAndGetDetails = async (senderId, recipientOrConversationId, content, mediaUrl = '', mediaType = '') => {
     await connectDb();
 
     // 1. Prepare ObjectIds
@@ -552,6 +551,8 @@ export const saveMessageAndGetDetails = async (senderId, recipientOrConversation
             username: senderInfo.username,
             profilepic: senderInfo.profilepic
         },
+        mediaUrl: mediaUrl,
+        mediaType: mediaType,
         readBy: [senderId],
         createdAt: now.toISOString(),
         updatedAt: now.toISOString()
@@ -562,7 +563,9 @@ export const saveMessageAndGetDetails = async (senderId, recipientOrConversation
         _id: messageId,
         conversationId: conversationId,
         sender: sender,
-        content: content,
+        content: content || '',
+        mediaUrl: mediaUrl,
+        mediaType: mediaType,
         readBy: [sender],
         createdAt: now,
         updatedAt: now
@@ -859,6 +862,42 @@ export const deleteMessagesAction = async (conversationId, messageIds, userId, d
     return { success: false, message: "No messages deleted." };
 }
 
+export const clearFullChatAction = async (conversationId, userId) => {
+    await connectDb();
+    
+    // Soft delete all messages in this conversation for the user
+    // This removes the 5-hour restriction for purely clearing your own view
+    const updateResult = await Message.updateMany({
+        conversationId: conversationId
+    }, {
+        $addToSet: { deletedBy: userId }
+    });
+
+    if (updateResult.modifiedCount > 0) {
+        try {
+            const client = await getRedisClient();
+            const cacheKey = `chat:messages:${conversationId}`;
+            const cached = await client.get(cacheKey);
+            if (cached) {
+                let messages = JSON.parse(cached);
+                // Dynamically mark all as deleted for this user in cache
+                messages = messages.map(msg => ({
+                    ...msg,
+                    deletedBy: [...(msg.deletedBy || []), userId]
+                }));
+                await client.setEx(cacheKey, 3600, JSON.stringify(messages));
+                console.log(`[Redis] Updated messages in cache for full chat clear: ${cacheKey}`);
+            }
+        } catch (e) {
+            console.error("Redis caching error during full chat clear:", e);
+        }
+
+        return { success: true, count: updateResult.modifiedCount };
+    }
+
+    return { success: false, message: "No messages found to clear." };
+}
+
 // ==========================================
 // NEW: MOMENTS & HOME FEED ACTIONS
 // ==========================================
@@ -946,7 +985,24 @@ export const fetchHomeFeed = async (userEmail, userId) => {
     });
     
     const sortedFeed = [...tier1, ...tier2, ...tier3];
-    return sortedFeed.map(serializeDoc);
+    
+    // Populate user details for all posts to ensure missing user names are handled
+    const userIdsInFeed = [...new Set(sortedFeed.map(p => p.user_id))];
+    const feedUsers = await User.find({ _id: { $in: userIdsInFeed } }).select('name username profilepic email').lean();
+    const userMap = {};
+    feedUsers.forEach(u => userMap[u._id.toString()] = u);
+
+    const populatedFeed = sortedFeed.map(post => {
+        const u = userMap[post.user_id];
+        if (u) {
+            post.user_name = u.name || u.username || post.user_name;
+            post.profilepic = u.profilepic || post.profilepic;
+            post.user_email = u.email;
+        }
+        return serializeDoc(post);
+    });
+
+    return populatedFeed;
 };
 
 // ==========================================
@@ -1004,7 +1060,24 @@ export const fetchShortsFeed = async (userEmail, userId) => {
     });
     
     const sortedFeed = [...tier1, ...tier2, ...tier3];
-    return sortedFeed.map(serializeDoc);
+    
+    // Populate user details for all shorts
+    const userIdsInFeed = [...new Set(sortedFeed.map(p => p.user_id))];
+    const feedUsers = await User.find({ _id: { $in: userIdsInFeed } }).select('name username profilepic email').lean();
+    const userMap = {};
+    feedUsers.forEach(u => userMap[u._id.toString()] = u);
+
+    const populatedFeed = sortedFeed.map(post => {
+        const u = userMap[post.user_id];
+        if (u) {
+            post.user_name = u.name || u.username || post.user_name;
+            post.profilepic = u.profilepic || post.profilepic;
+            post.user_email = u.email;
+        }
+        return serializeDoc(post);
+    });
+
+    return populatedFeed;
 };
 
 // ==========================================
@@ -1067,5 +1140,21 @@ export const fetchExploreFeed = async (userEmail, userId) => {
 
     const exploreFeed = [...tier1, ...tier2];
     
-    return exploreFeed.map(serializeDoc);
+    // Populate user details for explore feed
+    const userIdsInFeed = [...new Set(exploreFeed.map(p => p.user_id))];
+    const feedUsers = await User.find({ _id: { $in: userIdsInFeed } }).select('name username profilepic email').lean();
+    const userMap = {};
+    feedUsers.forEach(u => userMap[u._id.toString()] = u);
+
+    const populatedFeed = exploreFeed.map(post => {
+        const u = userMap[post.user_id];
+        if (u) {
+            post.user_name = u.name || u.username || post.user_name;
+            post.profilepic = u.profilepic || post.profilepic;
+            post.user_email = u.email;
+        }
+        return serializeDoc(post);
+    });
+
+    return populatedFeed;
 };

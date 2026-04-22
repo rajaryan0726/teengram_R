@@ -42,6 +42,15 @@ const AdminSetupPage = () => {
 
     const checkExisting = async () => {
         try {
+            if (session.user.status === 'verified' && session.user.role === 'USER') {
+                 setErrorMsg("This email is already registered as a student/user. Please use a dedicated official email.");
+                 return;
+            }
+            if (['SUB_ADMIN', 'SUPER_ADMIN'].includes(session.user.role)) {
+                 setErrorMsg("This email is already bound to another administrative role.");
+                 return;
+            }
+
             const inst = await getAdminInstitution(session.user.id);
             if (inst) {
                 if (inst.status === 'verified') {
@@ -162,7 +171,14 @@ const AdminSetupPage = () => {
                             <p className="text-gray-500 max-w-sm">To register an institution, you must authenticate using your official or secure email address via Google.</p>
                             
                             {status === "authenticated" ? (
-                                <button onClick={() => setStep(2)} className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 shadow-md transition-transform active:scale-95">
+                                <button 
+                                    onClick={() => {
+                                        if (errorMsg) return;
+                                        setStep(2);
+                                    }} 
+                                    disabled={!!errorMsg}
+                                    className={`px-8 py-3 rounded-lg font-semibold shadow-md transition-transform ${errorMsg ? 'bg-gray-400 cursor-not-allowed text-white' : 'bg-blue-600 text-white hover:bg-blue-700 active:scale-95'}`}
+                                >
                                     Register for Admin Panel 
                                 </button>
                             ) : (

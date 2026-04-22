@@ -1,12 +1,15 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { getPendingUsers, getVerifiedUsers, verifyUser, rejectUser, getSubAdminData } from '@/actions/subAdminActions';
-import { Loader2, CheckCircle, XCircle, Users, ExternalLink, ShieldCheck, MailWarning, Eye, X } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, Users, ExternalLink, ShieldCheck, MailWarning, Eye, X, LogOut, Home } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
 
 const SubAdminPanel = () => {
-    const { data: session } = useSession();
+    const { data: session, status } = useSession();
+    const router = useRouter();
     const [subAdminInfo, setSubAdminInfo] = useState(null);
     const [pendingUsers, setPendingUsers] = useState([]);
     const [verifiedUsers, setVerifiedUsers] = useState([]);
@@ -14,19 +17,32 @@ const SubAdminPanel = () => {
     const [selectedUser, setSelectedUser] = useState(null); // For detail modal
 
     const fetchData = async () => {
-        setLoading(true);
-        const info = await getSubAdminData(session.user.id);
-        const p_users = await getPendingUsers(session.user.id);
-        const v_users = await getVerifiedUsers(session.user.id);
-        setSubAdminInfo(info);
-        setPendingUsers(p_users || []);
-        setVerifiedUsers(v_users || []);
-        setLoading(false);
+        try {
+            setLoading(true);
+            const info = await getSubAdminData(session.user.id);
+            const p_users = await getPendingUsers(session.user.id);
+            const v_users = await getVerifiedUsers(session.user.id);
+            setSubAdminInfo(info);
+            setPendingUsers(p_users || []);
+            setVerifiedUsers(v_users || []);
+        } catch (error) {
+            console.error("Error heavily fetching subadmin data:", error);
+        } finally {
+            setLoading(false);
+        }
     };
 
     useEffect(() => {
-        if(session?.user?.id) fetchData();
-    }, [session]);
+        if (status === 'unauthenticated') {
+            router.push('/login');
+        } else if (status === 'authenticated' && session?.user?.id) {
+            if (session.user.role !== 'SUB_ADMIN') {
+                router.push('/');
+            } else {
+                fetchData();
+            }
+        }
+    }, [session, status, router]);
 
     const handleVerify = async (id) => {
         if (!confirm("Approve this student's registration?")) return;
@@ -89,6 +105,14 @@ const SubAdminPanel = () => {
                             <div className="flex justify-between items-center text-sm mt-1 pt-2 border-t border-blue-700">
                                 <span className="text-blue-300">Your Auth Code:</span>
                                 <code className="bg-blue-900 px-2 py-0.5 rounded text-blue-200 font-mono font-bold tracking-wider">{subAdminInfo.verification_code}</code>
+                            </div>
+                            <div className="flex gap-2 w-full mt-3">
+                                <button onClick={() => window.location.href = '/'} className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-1.5 font-bold shadow-sm transition-colors text-sm active:scale-95">
+                                    <Home className="w-4 h-4"/> Go to TeenGram
+                                </button>
+                                <button onClick={() => signOut({ callbackUrl: '/login' })} className="flex-1 flex items-center justify-center gap-2 bg-red-600/90 hover:bg-red-600 text-white rounded-lg py-1.5 font-bold shadow-sm transition-colors text-sm active:scale-95">
+                                    <LogOut className="w-4 h-4"/> Log Out
+                                </button>
                             </div>
                         </div>
                     )}

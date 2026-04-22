@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { socket } from "@/lib/socket"; // Import the socket client
-import { ArrowLeft, Send, Phone, Video, MoreVertical, Check, CheckCheck, Trash2, X } from "lucide-react";
-import { deleteMessagesAction } from "@/actions/useractions";
+import { ArrowLeft, Send, Phone, Video, MoreVertical, Check, CheckCheck, Trash2, X, Paperclip } from "lucide-react";
+import { deleteMessagesAction, clearFullChatAction } from "@/actions/useractions";
 
 // Helper to determine if the message was sent by the current user
 const isMessageFromMe = (message, currentUserId) => {
@@ -31,6 +31,8 @@ const formatMessageDate = (dateString) => {
 const ChatView = ({ activeChat, currentUserId, onBack, onStartCall }) => {
     const [messages, setMessages] = useState([]);
     const [inputContent, setInputContent] = useState('');
+    const [mediaUrl, setMediaUrl] = useState('');
+    const [mediaType, setMediaType] = useState('');
     const [typingUser, setTypingUser] = useState(null);
     const [chatError, setChatError] = useState(null);
 
@@ -42,10 +44,16 @@ const ChatView = ({ activeChat, currentUserId, onBack, onStartCall }) => {
     // Feature: Two-Way Deletion Modal
     const [showDeleteModal, setShowDeleteModal] = useState(false);
 
+    // Feature: Clear Full Chat
+    const [showOptionsMenu, setShowOptionsMenu] = useState(false);
+    const [showClearChatModal, setShowClearChatModal] = useState(false);
+    const [isClearingChat, setIsClearingChat] = useState(false);
+
     // Ref for auto-scrolling, typing timeout, and input focus
     const messagesEndRef = useRef(null);
     const typingTimeoutRef = useRef(null);
     const inputRef = useRef(null);
+    const fileInputRef = useRef(null);
 
     // --- Scroll to Bottom ---
     useEffect(() => {
@@ -204,13 +212,15 @@ const ChatView = ({ activeChat, currentUserId, onBack, onStartCall }) => {
 
     // 🚨 FINALIZED HANDLE SEND 🚨
     const handleSend = () => {
-        if (!inputContent.trim() || !activeChat || !currentUserId) return;
+        if ((!inputContent.trim() && !mediaUrl) || !activeChat || !currentUserId) return;
 
         const messagePayload = {
             senderId: currentUserId,
             // The activeChat.id is used as the recipient/conversation ID for the server action
             recipientOrConversationId: activeChat._id || activeChat.id,
             content: inputContent,
+            mediaUrl: mediaUrl,
+            mediaType: mediaType
         };
 
         // 1. Emit the message to the Socket.IO server
@@ -218,6 +228,22 @@ const ChatView = ({ activeChat, currentUserId, onBack, onStartCall }) => {
 
         // 2. Clear input
         setInputContent('');
+        setMediaUrl('');
+        setMediaType('');
+    };
+
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        if (file.size > 20 * 1024 * 1024) { alert("File size too large! Please upload under 20MB."); return; }
+        
+        const type = file.type.startsWith('image/') ? 'image' : 'video';
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setMediaUrl(reader.result);
+            setMediaType(type);
+        };
+        reader.readAsDataURL(file);
     };
 
     // --- DELETION HANDLER ---
@@ -248,6 +274,26 @@ const ChatView = ({ activeChat, currentUserId, onBack, onStartCall }) => {
             setIsDeleting(false);
             setIsSelectMode(false);
             setSelectedMessages(new Set());
+        }
+    };
+
+    const handleClearFullChat = async () => {
+        setIsClearingChat(true);
+        try {
+            const res = await clearFullChatAction(conversationId, currentUserId);
+            if (res.success) {
+                setMessages([]); // Instantly clear view for this user
+            } else {
+                // If it fails or there are no messages
+                if (res.message) setChatError(res.message);
+                setMessages([]); 
+            }
+        } catch (e) {
+            setChatError("Failed to clear chat.");
+        } finally {
+            setIsClearingChat(false);
+            setShowClearChatModal(false);
+            setShowOptionsMenu(false);
         }
     };
 
@@ -330,7 +376,26 @@ const ChatView = ({ activeChat, currentUserId, onBack, onStartCall }) => {
                     </button>
                     <button onClick={() => isOnline ? onStartCall(false) : alert("User is offline")} className="p-2 md:p-3 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all"><Phone className="w-5 h-5" /></button>
                     <button onClick={() => isOnline ? onStartCall(true) : alert("User is offline")} className="p-2 md:p-3 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all"><Video className="w-5 h-5" /></button>
-                    <button className="hidden md:block p-2 md:p-3 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all"><MoreVertical className="w-5 h-5" /></button>
+                    
+                    <div className="relative">
+                        <button 
+                            onClick={() => setShowOptionsMenu(!showOptionsMenu)} 
+                            className="hidden md:block p-2 md:p-3 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all"
+                        >
+                            <MoreVertical className="w-5 h-5" />
+                        </button>
+                        
+                        {showOptionsMenu && (
+                            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-neutral-900 rounded-xl shadow-xl border border-gray-100 dark:border-neutral-800 py-2 z-50">
+                                <button 
+                                    onClick={() => { setShowClearChatModal(true); setShowOptionsMenu(false); }}
+                                    className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 text-sm font-semibold transition-colors"
+                                >
+                                    Clear full chat
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -396,7 +461,13 @@ const ChatView = ({ activeChat, currentUserId, onBack, onStartCall }) => {
                                 {/* Display sender name for group chats */}
                                 {!isMe && activeChat.isGroup && <p className="text-xs font-bold mb-1 text-blue-500">{senderName}</p>}
 
-                                <p>{message.content}</p>
+                                {message.mediaUrl && message.mediaType === 'image' && (
+                                    <img src={message.mediaUrl} alt="attachment" className="rounded-xl w-full max-h-64 object-cover mb-2" />
+                                )}
+                                {message.mediaUrl && message.mediaType === 'video' && (
+                                    <video src={message.mediaUrl} controls className="rounded-xl w-full max-h-64 bg-black mb-2" />
+                                )}
+                                {message.content && <p className="whitespace-pre-wrap">{message.content}</p>}
 
                                 <div className={`flex items-center justify-end mt-1 space-x-1 opacity-80 ${isMe ? 'text-blue-100' : 'text-gray-400'}`}>
                                     <span className="text-[10px] font-medium">
@@ -452,34 +523,58 @@ const ChatView = ({ activeChat, currentUserId, onBack, onStartCall }) => {
                         </div>
                     </div>
                 ) : (
-                    <div className="flex gap-2 md:gap-3 items-end max-w-5xl mx-auto">
-                        <button className="p-2 md:p-3 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-neutral-800 rounded-full transition-all">
-                            <span className="text-xl md:text-2xl">📎</span>
-                        </button>
-
-                        <div className="flex-1 bg-gray-50 dark:bg-neutral-900 rounded-2xl md:rounded-3xl border border-gray-200 dark:border-neutral-800 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all flex items-center px-3 md:px-4 py-0.5 md:py-1 shadow-inner dark:shadow-none">
-                            <input
-                                type="text"
-                                placeholder="Type a message..."
-                                value={inputContent}
-                                onChange={handleTyping}
-                                onKeyPress={(e) => { if (e.key === 'Enter') handleSend(); }}
-                                className="flex-1 bg-transparent py-2 md:py-3 focus:outline-none text-sm md:text-base text-gray-800 dark:text-white placeholder-gray-400 font-medium"
-                                ref={inputRef}
+                    <div className="flex flex-col gap-2 w-full max-w-5xl mx-auto">
+                        {mediaUrl && (
+                            <div className="p-3 rounded-xl flex items-center justify-between bg-gray-50 dark:bg-neutral-800/50 border dark:border-neutral-700 shadow-sm w-fit min-w-[200px]">
+                                <div className="flex items-center gap-2">
+                                    {mediaType === 'image' ? (
+                                        <img src={mediaUrl} className="h-10 w-10 object-cover rounded shadow" alt="Preview"/>
+                                    ) : (
+                                        <video src={mediaUrl} className="h-10 w-10 object-cover rounded shadow"/>
+                                    )}
+                                    <span className="text-xs font-medium">Attachment ready</span>
+                                </div>
+                                <button onClick={() => { setMediaUrl(''); setMediaType(''); }} className="p-1 text-gray-500 hover:text-red-500 bg-white dark:bg-neutral-800 rounded-full shadow"><X size={16}/></button>
+                            </div>
+                        )}
+                        <div className="flex gap-2 md:gap-3 items-end w-full">
+                            
+                            <input 
+                                type="file" 
+                                accept="image/*,video/*" 
+                                className="hidden" 
+                                ref={fileInputRef} 
+                                onChange={handleFileChange}
                             />
-                        </div>
+                            
+                            <button onClick={() => fileInputRef.current?.click()} className="p-2 md:p-3 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-neutral-800 rounded-full transition-all">
+                                <Paperclip size={24} />
+                            </button>
 
-                        <button
-                            onClick={handleSend}
-                            disabled={!inputContent.trim()}
-                            className={`p-2.5 md:p-3.5 rounded-full shadow-lg transition-all duration-200 flex items-center justify-center
-                                ${!inputContent.trim()
-                                    ? 'bg-gray-200 text-gray-400 shadow-none cursor-default'
-                                    : 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-blue-200 hover:shadow-blue-400 hover:scale-105 active:scale-95'
-                                }`}
-                        >
-                            <Send className="w-4 h-4 md:w-5 md:h-5 ml-0.5" />
-                        </button>
+                            <div className="flex-1 bg-gray-50 dark:bg-neutral-900 rounded-2xl md:rounded-3xl border border-gray-200 dark:border-neutral-800 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all flex items-center px-3 md:px-4 py-0.5 md:py-1 shadow-inner dark:shadow-none">
+                                <input
+                                    type="text"
+                                    placeholder="Type a message..."
+                                    value={inputContent}
+                                    onChange={handleTyping}
+                                    onKeyPress={(e) => { if (e.key === 'Enter') handleSend(); }}
+                                    className="flex-1 bg-transparent py-2 md:py-3 focus:outline-none text-sm md:text-base text-gray-800 dark:text-white placeholder-gray-400 font-medium"
+                                    ref={inputRef}
+                                />
+                            </div>
+
+                            <button
+                                onClick={handleSend}
+                                disabled={!inputContent.trim() && !mediaUrl}
+                                className={`p-2.5 md:p-3.5 rounded-full shadow-lg transition-all duration-200 flex items-center justify-center
+                                    ${(!inputContent.trim() && !mediaUrl)
+                                        ? 'bg-gray-200 text-gray-400 shadow-none cursor-default'
+                                        : 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-blue-200 hover:shadow-blue-400 hover:scale-105 active:scale-95'
+                                    }`}
+                            >
+                                <Send className="w-4 h-4 md:w-5 md:h-5 ml-0.5" />
+                            </button>
+                        </div>
                     </div>
                 )}
             </div>
@@ -518,6 +613,37 @@ const ChatView = ({ activeChat, currentUserId, onBack, onStartCall }) => {
                             
                             <button
                                 onClick={() => setShowDeleteModal(false)}
+                                className="w-full py-3 text-gray-600 dark:text-gray-300 font-bold hover:bg-gray-50 dark:hover:bg-neutral-800 rounded-xl transition"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* FULL CHAT CLEAR MODAL */}
+            {showClearChatModal && (
+                <div className="fixed inset-0 z-[120] bg-black/60 backdrop-blur-sm flex items-center justify-center">
+                    <div className="bg-white dark:bg-neutral-900 p-8 rounded-3xl shadow-2xl max-w-sm w-full mx-4 border border-gray-100 dark:border-neutral-800 relative transform transition-all">
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Clear this chat?</h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                            This will clear the entire chat history from your view. The other user will still be able to see it.
+                        </p>
+
+                        <div className="flex flex-col gap-3">
+                            <button
+                                onClick={handleClearFullChat}
+                                disabled={isClearingChat}
+                                className="w-full py-3 text-red-600 font-bold hover:bg-red-50 rounded-xl transition"
+                            >
+                                {isClearingChat ? 'Clearing...' : 'Clear Chat'}
+                            </button>
+                            
+                            <div className="h-px bg-gray-100 dark:bg-neutral-800 my-1"></div>
+                            
+                            <button
+                                onClick={() => setShowClearChatModal(false)}
                                 className="w-full py-3 text-gray-600 dark:text-gray-300 font-bold hover:bg-gray-50 dark:hover:bg-neutral-800 rounded-xl transition"
                             >
                                 Cancel

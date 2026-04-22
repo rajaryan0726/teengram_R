@@ -35,14 +35,16 @@ export default (io, socket, onlineUsers) => {
 
     // 2. EVENT: client sends 'send_message'
     // Persists the message and broadcasts it.
-    socket.on('send_message', async ({ senderId, recipientOrConversationId, content }) => {
+    socket.on('send_message', async ({ senderId, recipientOrConversationId, content, mediaUrl, mediaType }) => {
 
         try {
             // A. PERSISTENCE: Save to MongoDB and get populated details
             const newMessage = await saveMessageAndGetDetails(
                 senderId,
                 recipientOrConversationId,
-                content
+                content,
+                mediaUrl,
+                mediaType
             );
 
             // Get the conversation ID (ensures we use the right room name)
