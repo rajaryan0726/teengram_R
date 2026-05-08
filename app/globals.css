@@ -12,6 +12,13 @@
   --color-primary-gradient: linear-gradient(135deg, #3b82f6 0%, #06b6d4 50%, #0ea5e9 100%);
   --color-glass-surface: rgba(255, 255, 255, 0.7);
   --color-glass-border: rgba(255, 255, 255, 0.5);
+
+  --animate-fade-in-up: fade-in-up 0.6s ease-out forwards;
+}
+
+@keyframes fade-in-up {
+  0% { opacity: 0; transform: translateY(30px) scale(0.95); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 :root {
@@ -54,3 +61,20 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(59, 130, 246, 0.6);
 }
+
+/* Global 3D & Glassmorphism Utilities */
+.glass-panel {
+  @apply bg-white/40 dark:bg-black/40 backdrop-blur-2xl border border-white/50 dark:border-white/10 shadow-[0_8px_32px_0_rgba(31,38,135,0.1)] dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.6)];
+}
+
+.glass-card {
+  @apply bg-white/60 dark:bg-neutral-900/60 backdrop-blur-xl border border-white/60 dark:border-white/10 shadow-[0_4px_24px_0_rgba(0,0,0,0.05)] dark:shadow-[0_4px_24px_0_rgba(0,0,0,0.4)];
+}
+
+.hover-3d {
+  @apply transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_20px_40px_rgba(0,0,0,0.15)] dark:hover:shadow-[0_20px_40px_rgba(0,0,0,0.6)];
+}
+
+.ambient-blob {
+  @apply absolute rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-[100px] opacity-40 dark:opacity-20 pointer-events-none;
+}

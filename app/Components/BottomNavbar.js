@@ -66,29 +66,28 @@ const BottomNavbar = () => {
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-black border-t border-gray-200 dark:border-neutral-800 px-4 py-2 flex justify-around items-center z-50 backdrop-blur-lg bg-opacity-80 dark:bg-opacity-80">
+    <div className="md:hidden fixed bottom-6 left-4 right-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:w-[400px] glass-panel rounded-full px-4 py-3 flex justify-around items-center z-50 shadow-[0_10px_40px_rgba(0,0,0,0.2)] dark:shadow-[0_10px_40px_rgba(0,0,0,0.8)] border-t border-white/40 dark:border-white/10">
       {navItems.map(({ Icon, label, path }) => {
         const isActive = pathname === path;
         return (
           <Link
             key={label}
             href={path}
-            className={`flex flex-col items-center gap-1 p-1 rounded-xl transition-all duration-300 ${
+            className={`flex flex-col items-center gap-1 p-2 rounded-2xl hover-3d ${
               isActive
-                ? 'text-blue-600 dark:text-blue-400'
-                : 'text-gray-500 dark:text-gray-400'
+                ? 'text-cyan-600 dark:text-cyan-400 bg-white/20 dark:bg-white/10 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3)]'
+                : 'text-slate-600 dark:text-slate-300 hover:bg-white/10 dark:hover:bg-white/5'
             }`}
           >
             <div className="relative">
-              <Icon className={`w-5 h-5 ${isActive ? 'stroke-[2.5px]' : 'stroke-2'}`} />
+              <Icon className={`w-6 h-6 ${isActive ? 'stroke-[2.5px] drop-shadow-md' : 'stroke-2'}`} />
               {label === "Messages" && hasUnread && (
-                <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-white dark:border-black shadow-[0_0_8px_rgba(34,197,94,0.7)] animate-pulse"></span>
+                <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-red-500 border-2 border-white dark:border-black shadow-[0_0_10px_rgba(239,68,68,0.8)] animate-pulse"></span>
               )}
               {label === "Notification" && hasUnreadNotif && (
-                <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-white dark:border-black shadow-[0_0_8px_rgba(34,197,94,0.7)] animate-pulse"></span>
+                <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-red-500 border-2 border-white dark:border-black shadow-[0_0_10px_rgba(239,68,68,0.8)] animate-pulse"></span>
               )}
             </div>
-            <span className="text-[9px] font-medium">{label}</span>
           </Link>
         );
       })}
@@ -96,10 +95,11 @@ const BottomNavbar = () => {
       {/* Theme Toggle for Mobile */}
       <button
         onClick={toggleTheme}
-        className="flex flex-col items-center gap-1 p-1 text-gray-500 dark:text-gray-400 rounded-xl transition-all duration-300"
+        className="flex flex-col items-center gap-1 p-2 text-slate-600 dark:text-slate-300 rounded-2xl hover-3d hover:bg-white/10 dark:hover:bg-white/5"
       >
-        {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
-        <span className="text-[9px] font-medium">{theme === 'light' ? 'Dark' : 'Light'}</span>
+        <div className="relative">
+          {theme === 'light' ? <Moon className="w-6 h-6" /> : <Sun className="w-6 h-6" />}
+        </div>
       </button>
     </div>
   );

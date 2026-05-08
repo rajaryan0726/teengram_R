@@ -116,92 +116,94 @@ const Sidebar = () => {
   navItems.push({ Icon: User, label: "Profile", path: "/User" });
 
   return (
-    <div
-      className={`hidden md:flex h-screen ${isCollapsed ? 'w-20' : 'w-20 lg:w-64'} flex-col justify-between py-6 px-3 lg:px-4
-                 bg-white dark:bg-black border-r border-gray-200 dark:border-neutral-800 shadow-sm z-50 overflow-y-auto scrollbar-hide transition-all duration-300`}
-    >
-      {/* Top Logo */}
-      <div 
-        className={`mb-8 flex items-center justify-center ${isCollapsed ? '' : 'lg:justify-start lg:pl-4'} cursor-pointer`}
-        onClick={() => setIsCollapsed(!isCollapsed)}
+    <div className="hidden md:block p-4 h-screen z-50 pointer-events-none">
+      <div
+        className={`pointer-events-auto h-full ${isCollapsed ? 'w-20' : 'w-20 lg:w-64'} flex flex-col justify-between py-6 px-3 lg:px-4
+                   glass-panel rounded-3xl overflow-y-auto custom-scrollbar transition-all duration-500 shadow-[0_10px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_10px_40px_rgba(0,0,0,0.6)]`}
       >
-        <h1 className={`${isCollapsed ? 'hidden' : 'hidden lg:block'} text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-cyan-500 to-sky-500`} style={{ fontFamily: 'Brush Script MT, cursive' }}>
-          TeenGram
-        </h1>
-        <div className={`${isCollapsed ? 'flex' : 'lg:hidden'} w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-sky-500 items-center justify-center text-white font-bold text-xl`}>
-          T
-        </div>
-      </div>
-
-      {/* Navigation */}
-      <nav className="flex flex-col gap-2 flex-1">
-        {navItems.map(({ Icon, label, path }) => {
-          const isActive = pathname === path;
-          return (
-            <Link
-              key={label}
-              href={path}
-              className={`flex items-center gap-4 px-3 py-3 rounded-2xl font-medium transition-all duration-300 group
-                    ${isActive
-                  ? 'bg-gradient-to-r from-blue-100 to-cyan-50 text-blue-700 dark:from-blue-900/40 dark:to-cyan-900/40 dark:text-blue-300 shadow-sm transform scale-105'
-                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-neutral-900 dark:hover:text-white'
-                }
-                `}
-            >
-              <div className={`relative p-1 rounded-lg transition-colors ${isActive ? '' : 'group-hover:bg-white dark:group-hover:bg-transparent'}`}>
-                {label === "Profile" ? (
-                  <img
-                    src="/landing.png"
-                    alt="Profile"
-                    className={`w-7 h-7 rounded-full border-2 ${isActive ? 'border-blue-500' : 'border-transparent'}`}
-                  />
-                ) : (
-                  <Icon className={`w-7 h-7 ${isActive ? 'stroke-[2.5px]' : 'stroke-2'}`} />
-                )}
-                {/* Unread Dots */}
-                {label === "Messages" && hasUnread && (
-                    <span className="absolute top-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-white dark:border-black shadow-[0_0_10px_rgba(34,197,94,0.7)] animate-pulse"></span>
-                )}
-                {label === "Notification" && hasUnreadNotif && (
-                    <span className="absolute top-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-white dark:border-black shadow-[0_0_10px_rgba(34,197,94,0.7)] animate-pulse"></span>
-                )}
-              </div>
-
-              <span className={`${isCollapsed ? 'hidden' : 'hidden lg:block'} text-base`}>{label}</span>
-            </Link>
-          );
-        })}
-      </nav>
-
-      {/* Bottom More Menu */}
-      <div className="mt-auto space-y-2 relative">
-        <button
-          onClick={toggleTheme}
-          className="w-full flex items-center gap-4 px-3 py-3 rounded-2xl font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-neutral-900 dark:hover:text-white transition-all duration-200"
+        {/* Top Logo */}
+        <div 
+          className={`mb-8 flex items-center justify-center ${isCollapsed ? '' : 'lg:justify-start lg:pl-4'} cursor-pointer hover-3d`}
+          onClick={() => setIsCollapsed(!isCollapsed)}
         >
-          {theme === 'dark' ? <Sun className="w-7 h-7 text-sky-500" /> : <Moon className="w-7 h-7 text-blue-500" />}
-          <span className={`${isCollapsed ? 'hidden' : 'hidden lg:block'} text-base`}>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
-        </button>
-
-        <button
-          onClick={() => setShowMoreMenu(!showMoreMenu)}
-          className="w-full flex items-center gap-4 px-3 py-3 rounded-2xl font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-neutral-900 dark:hover:text-white transition-all duration-200"
-        >
-          <Menu className="w-7 h-7" />
-          <span className={`${isCollapsed ? 'hidden' : 'hidden lg:block'} text-base`}>More</span>
-        </button>
-
-        {showMoreMenu && (
-          <div className={`absolute bottom-16 ${isCollapsed ? 'left-4 w-[160px]' : 'left-0 w-[200px]'} bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 rounded-2xl shadow-xl flex flex-col p-2 z-50 mb-2`}>
-            <button
-              onClick={() => signOut({ callbackUrl: '/login' })}
-              className="flex items-center gap-3 px-4 py-3 rounded-xl text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 font-medium transition-colors w-full"
-            >
-              <LogOut className="w-5 h-5" />
-              <span>Log out</span>
-            </button>
+          <h1 className={`${isCollapsed ? 'hidden' : 'hidden lg:block'} text-3xl font-black bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-cyan-500 to-sky-500 drop-shadow-md`} style={{ fontFamily: 'Arial, sans-serif', letterSpacing: '-1px' }}>
+            TeenGram
+          </h1>
+          <div className={`${isCollapsed ? 'flex' : 'lg:hidden'} w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-cyan-400 items-center justify-center text-white font-black text-2xl shadow-[0_0_20px_rgba(6,182,212,0.5)]`}>
+            TG
           </div>
-        )}
+        </div>
+
+        {/* Navigation */}
+        <nav className="flex flex-col gap-3 flex-1">
+          {navItems.map(({ Icon, label, path }) => {
+            const isActive = pathname === path;
+            return (
+              <Link
+                key={label}
+                href={path}
+                className={`flex items-center gap-4 px-3 py-3 rounded-2xl font-bold transition-all duration-300 group hover-3d
+                      ${isActive
+                    ? 'bg-white/40 dark:bg-white/10 text-cyan-600 dark:text-cyan-400 shadow-[inset_0_2px_10px_rgba(255,255,255,0.4)] dark:shadow-[inset_0_2px_10px_rgba(255,255,255,0.1)] border border-white/50 dark:border-white/5'
+                    : 'text-slate-600 hover:bg-white/30 dark:text-slate-300 dark:hover:bg-white/5'
+                  }
+                  `}
+              >
+                <div className="relative p-1">
+                  {label === "Profile" ? (
+                    <img
+                      src="/landing.png"
+                      alt="Profile"
+                      className={`w-7 h-7 rounded-full object-cover shadow-sm ${isActive ? 'ring-2 ring-cyan-500' : ''}`}
+                    />
+                  ) : (
+                    <Icon className={`w-7 h-7 ${isActive ? 'stroke-[2.5px] drop-shadow-md' : 'stroke-2'}`} />
+                  )}
+                  {/* Unread Dots */}
+                  {label === "Messages" && hasUnread && (
+                      <span className="absolute top-0 right-0 h-3 w-3 rounded-full bg-red-500 border-2 border-white dark:border-black shadow-[0_0_10px_rgba(239,68,68,0.8)] animate-pulse"></span>
+                  )}
+                  {label === "Notification" && hasUnreadNotif && (
+                      <span className="absolute top-0 right-0 h-3 w-3 rounded-full bg-red-500 border-2 border-white dark:border-black shadow-[0_0_10px_rgba(239,68,68,0.8)] animate-pulse"></span>
+                  )}
+                </div>
+
+                <span className={`${isCollapsed ? 'hidden' : 'hidden lg:block'} text-base tracking-wide`}>{label}</span>
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Bottom More Menu */}
+        <div className="mt-auto space-y-3 relative pt-4">
+          <button
+            onClick={toggleTheme}
+            className="w-full flex items-center gap-4 px-3 py-3 rounded-2xl font-bold text-slate-600 hover:bg-white/30 dark:text-slate-300 dark:hover:bg-white/5 hover-3d transition-all duration-300"
+          >
+            {theme === 'dark' ? <Sun className="w-7 h-7 text-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,0.5)]" /> : <Moon className="w-7 h-7 text-blue-500 drop-shadow-[0_0_10px_rgba(59,130,246,0.5)]" />}
+            <span className={`${isCollapsed ? 'hidden' : 'hidden lg:block'} text-base tracking-wide`}>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+          </button>
+
+          <button
+            onClick={() => setShowMoreMenu(!showMoreMenu)}
+            className="w-full flex items-center gap-4 px-3 py-3 rounded-2xl font-bold text-slate-600 hover:bg-white/30 dark:text-slate-300 dark:hover:bg-white/5 hover-3d transition-all duration-300"
+          >
+            <Menu className="w-7 h-7" />
+            <span className={`${isCollapsed ? 'hidden' : 'hidden lg:block'} text-base tracking-wide`}>More</span>
+          </button>
+
+          {showMoreMenu && (
+            <div className={`absolute bottom-20 ${isCollapsed ? 'left-4 w-[160px]' : 'left-0 w-[200px]'} glass-panel rounded-2xl flex flex-col p-2 z-50 mb-2 animate-fade-in-up`}>
+              <button
+                onClick={() => signOut({ callbackUrl: '/login' })}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 hover:bg-red-500/10 font-bold transition-colors w-full"
+              >
+                <LogOut className="w-5 h-5" />
+                <span>Log out</span>
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -342,6 +342,22 @@ export const upload_written_post = async (data, user_id, institute_name, univers
     return false
 }
 
+// Delete a post by its ID (only the owner can delete)
+export const deletePost = async (postId, userId) => {
+    await connectDb();
+    try {
+        const post = await Written_Post.findById(postId);
+        if (!post) return { success: false, message: "Post not found." };
+        if (post.user_id !== userId) return { success: false, message: "Unauthorized." };
+
+        await Written_Post.findByIdAndDelete(postId);
+        return { success: true, message: "Post deleted successfully." };
+    } catch (err) {
+        console.error("Error deleting post:", err);
+        return { success: false, message: "Failed to delete post." };
+    }
+}
+
 //fetch the writtenpost for the user
 export const fetchpost = async (user_id) => {
     await connectDb();

@@ -1,23 +1,16 @@
 import connectDb from "@/app/db/connectDb";
 import NextAuth from "next-auth";
-import GitHubProvider from "next-auth/providers/github";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import User from "@/models/User";
-import VerificationCode from "@/models/VerificationCode";
 import bcrypt from "bcryptjs";
 
 // Handle ESM/CJS interop for providers
-const GithubProviderFunction = GitHubProvider.default || GitHubProvider;
 const GoogleProviderFunction = GoogleProvider.default || GoogleProvider;
 const CredentialsProviderFunction = CredentialsProvider.default || CredentialsProvider;
 
 export const authOptions = {
     providers: [
-        GithubProviderFunction({
-            clientId: process.env.GITHUB_ID,
-            clientSecret: process.env.GITHUB_SECRET
-        }),
         GoogleProviderFunction({
             clientId: process.env.GOOGLE_CLIENT_ID,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET
@@ -26,8 +19,7 @@ export const authOptions = {
             name: "Credentials Login",
             credentials: {
                 username: { label: "Username", type: "text" },
-                password: { label: "Password", type: "password" },
-                code: { label: "Verification Code", type: "text" }
+                password: { label: "Password", type: "password" }
             },
             async authorize(credentials) {
                 await connectDb();
@@ -47,7 +39,7 @@ export const authOptions = {
                 }
                 
                 if (!user.password) {
-                    throw new Error("Please log in with Google/GitHub");
+                    throw new Error("Please log in with Google");
                 }
 
                 const isPasswordMatch = await bcrypt.compare(credentials.password, user.password);
@@ -55,24 +47,11 @@ export const authOptions = {
                     throw new Error("Invalid username or password");
                 }
 
-                if (user.role === 'SUB_ADMIN') {
-                    if (!credentials.code) {
-                        throw new Error("Verification Code Required");
-                    }
-                    const codeDoc = await VerificationCode.findOne({ sub_admin: user._id, code: credentials.code, is_active: true });
-                    if (!codeDoc) {
-                        throw new Error("Invalid Verification Code");
-                    }
-                }
-                
                 return { 
                     id: user._id.toString(), 
                     email: user.email, 
                     name: user.name, 
-                    image: user.profilepic,
-                    role: user.role,
-                    status: user.status,
-                    institution: user.institution
+                    image: user.profilepic
                 };
             }
         }),
@@ -86,52 +65,35 @@ export const authOptions = {
     },
     callbacks: {
         async signIn({ user, account, profile, email, credentials }) {
-            if (account.provider === "github" || account.provider === "google") {
+            if (account.provider === "google") {
                 await connectDb();
                 let currentUser = await User.findOne({ email: user.email });
 
                 if (!currentUser) {
-                    const newUser = await User.create({
-                        email: user.email,
-                        // Ensure unique username
-                        username: user.email.split("@")[0] + "_" + Date.now().toString().slice(-4),
-                        name: user.name,
-                        profilepic: user.image,
-                        status: 'pending',
-                        role: 'USER'
-                    });
+                    // Block sign in for unregistered users by returning a custom error URL
+                    return "/login?error=not_registered";
                 }
+                user.id = currentUser._id.toString();
+                user.name = currentUser.username;
                 return true;
             }
             return true;
         },
 
         async jwt({ token, user }) {
-            await connectDb();
-            if (token?.email) {
-                const dbUser = await User.findOne({ email: token.email }).lean();
-                if (dbUser) {
-                    token.id = dbUser._id.toString();
-                    token.role = dbUser.role;
-                    token.status = dbUser.status;
-                } else {
-                    token.status = "deleted";
-                }
+            // Only hits on initial sign in
+            if (user) {
+                token.id = user.id;
+                token.name = user.name;
             }
             return token;
         },
 
         async session({ session, token }) {
-            await connectDb(); 
-            if (session.user?.email) {
-                const dbUser = await User.findOne({ email: session.user.email }).lean();
-                if (dbUser) {
-                    session.user.name = dbUser.username;
-                    session.user.id = dbUser._id.toString(); 
-                    session.user.role = dbUser.role;
-                    session.user.status = dbUser.status;
-                    session.user.institution = dbUser.institution ? dbUser.institution.toString() : null;
-                }
+            if (token) {
+                session.user = session.user || {};
+                session.user.id = token.id;
+                session.user.name = token.name;
             }
             return session;
         },

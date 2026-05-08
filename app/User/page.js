@@ -3,12 +3,12 @@ import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import Sidebar from '../Components/Sidebar'
-import { fetchuser, fetchFollowingAction, fetchFollowersAction, upload_written_post, fetchpost, toggleLikePost, addComment, replyToComment, uploadMoment, uploadShort, updateProfile } from '@/actions/useractions'
+import { fetchuser, fetchFollowingAction, fetchFollowersAction, upload_written_post, fetchpost, toggleLikePost, addComment, replyToComment, uploadMoment, uploadShort, updateProfile, deletePost } from '@/actions/useractions'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { sendPrompt } from '@/utils/sendPrompt'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Image as ImageIcon, Video, X, Heart, MessageCircle, Send, ShieldCheck } from 'lucide-react'
+import { Image as ImageIcon, Video, X, Heart, MessageCircle, Send, ShieldCheck, Trash2 } from 'lucide-react'
 import { io } from 'socket.io-client'
 
 const Page = () => {
@@ -45,6 +45,10 @@ const Page = () => {
   const [shortFormOpen, setShortFormOpen] = useState(false);
   const [shortForm, setShortForm] = useState({});
 
+  // NSFW Analysis State
+  const [nsfwModel, setNsfwModel] = useState(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
   useEffect(() => {
     let pollingInterval;
 
@@ -53,6 +57,49 @@ const Page = () => {
     }
     else {
       getdata()
+
+      // Load NSFW Model via CDN to bypass Webpack static analysis errors
+      const loadModel = async () => {
+        // Prevent double-loading (React StrictMode / re-renders)
+        if (window.__nsfwModelLoaded) {
+          if (window.__nsfwModelInstance) setNsfwModel(window.__nsfwModelInstance);
+          return;
+        }
+        window.__nsfwModelLoaded = true;
+
+        if (window.nsfwjs) {
+          try {
+            const model = await window.nsfwjs.load('/nsfw_model/model.json');
+            window.__nsfwModelInstance = model;
+            setNsfwModel(model);
+            console.log("NSFW model loaded (cached)");
+          } catch(e) { console.error(e); window.__nsfwModelLoaded = false; }
+          return;
+        }
+
+        const tfScript = document.createElement('script');
+        tfScript.src = 'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.21.0/dist/tf.min.js';
+        document.head.appendChild(tfScript);
+
+        tfScript.onload = () => {
+          const nsfwScript = document.createElement('script');
+          nsfwScript.src = 'https://cdn.jsdelivr.net/npm/nsfwjs@2.4.2/dist/nsfwjs.min.js';
+          document.head.appendChild(nsfwScript);
+          
+          nsfwScript.onload = async () => {
+            try {
+              const model = await window.nsfwjs.load('/nsfw_model/model.json');
+              window.__nsfwModelInstance = model;
+              setNsfwModel(model);
+              console.log("NSFW model loaded successfully");
+            } catch (err) {
+              console.error("Failed to load NSFW model", err);
+              window.__nsfwModelLoaded = false;
+            }
+          };
+        };
+      };
+      loadModel();
 
       // Realtime syncing just for Followers / Following list
       const pollFollowers = async () => {
@@ -135,7 +182,64 @@ const Page = () => {
     setWritten_form({ ...Written_form, [e.target.name]: e.target.value })
   }
 
-  const handleFileChange = (e) => {
+  const analyzeMedia = async (file, fileType) => {
+    if (!nsfwModel) return true; // Safe by default if model not loaded
+    setIsAnalyzing(true);
+    
+    return new Promise((resolve) => {
+      if (fileType === 'image') {
+        const img = new window.Image();
+        img.crossOrigin = 'anonymous';
+        img.src = URL.createObjectURL(file);
+        img.onload = async () => {
+          try {
+            const predictions = await nsfwModel.classify(img);
+            URL.revokeObjectURL(img.src);
+            const isNsfw = predictions.some(p => 
+              (p.className === 'Porn' || p.className === 'Hentai' || p.className === 'Sexy') && p.probability > 0.6
+            );
+            setIsAnalyzing(false);
+            resolve(!isNsfw);
+          } catch(err) {
+            console.error("NSFW check failed:", err);
+            setIsAnalyzing(false);
+            resolve(true); // Default to safe if error
+          }
+        };
+        img.onerror = () => { setIsAnalyzing(false); resolve(true); }
+      } else if (fileType === 'video') {
+        const video = document.createElement('video');
+        video.crossOrigin = 'anonymous';
+        video.src = URL.createObjectURL(file);
+        
+        video.onloadeddata = () => {
+          video.currentTime = Math.min(1, video.duration / 2); // check frame at 1s or middle
+        };
+        
+        video.onseeked = async () => {
+          try {
+            const predictions = await nsfwModel.classify(video);
+            URL.revokeObjectURL(video.src);
+            const isNsfw = predictions.some(p => 
+              (p.className === 'Porn' || p.className === 'Hentai' || p.className === 'Sexy') && p.probability > 0.6
+            );
+            setIsAnalyzing(false);
+            resolve(!isNsfw);
+          } catch(err) {
+            console.error("NSFW check failed:", err);
+            setIsAnalyzing(false);
+            resolve(true);
+          }
+        };
+        video.onerror = () => { setIsAnalyzing(false); resolve(true); }
+      } else {
+        setIsAnalyzing(false);
+        resolve(true);
+      }
+    });
+  };
+
+  const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
@@ -144,15 +248,18 @@ const Page = () => {
       alert("File size too large! Please upload under 3MB.");
       return;
     }
+    
+    const type = file.type.startsWith('image/') ? 'image' : 'video';
+    const isSafe = await analyzeMedia(file, type);
+    if (!isSafe) {
+      alert("NSFW/Foul content detected. Upload blocked.");
+      e.target.value = '';
+      return;
+    }
 
     const reader = new FileReader();
     reader.onloadend = () => {
-      const type = file.type.startsWith('image/') ? 'image' : 'video';
-      setWritten_form({
-        ...Written_form,
-        mediaUrl: reader.result,
-        mediaType: type
-      });
+      setWritten_form({ ...Written_form, mediaUrl: reader.result, mediaType: type });
     };
     reader.readAsDataURL(file);
   };
@@ -165,14 +272,21 @@ const Page = () => {
     setMomentForm({ ...momentForm, [e.target.name]: e.target.value });
   };
 
-  const handleMomentFileChange = (e) => {
+  const handleMomentFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
     if (file.size > 3 * 1024 * 1024) { alert("File size too large! Please upload under 3MB."); return; }
 
+    const type = file.type.startsWith('image/') ? 'image' : 'video';
+    const isSafe = await analyzeMedia(file, type);
+    if (!isSafe) {
+      alert("NSFW/Foul content detected. Upload blocked.");
+      e.target.value = '';
+      return;
+    }
+
     const reader = new FileReader();
     reader.onloadend = () => {
-      const type = file.type.startsWith('image/') ? 'image' : 'video';
       setMomentForm({ ...momentForm, mediaUrl: reader.result, mediaType: type });
     };
     reader.readAsDataURL(file);
@@ -196,11 +310,18 @@ const Page = () => {
     setShortForm({ ...shortForm, [e.target.name]: e.target.value });
   };
 
-  const handleShortFileChange = (e) => {
+  const handleShortFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
     if (!file.type.startsWith('video/')) { alert("Only videos are allowed for Shorts!"); return; }
     if (file.size > 20 * 1024 * 1024) { alert("File size too large! Please upload under 20MB."); return; }
+
+    const isSafe = await analyzeMedia(file, 'video');
+    if (!isSafe) {
+      alert("NSFW/Foul content detected. Upload blocked.");
+      e.target.value = '';
+      return;
+    }
 
     const videoElement = document.createElement('video');
     videoElement.preload = 'metadata';
@@ -386,102 +507,101 @@ const Page = () => {
         <div className="max-w-5xl mx-auto space-y-4 md:space-y-6">
 
           {/* --- Profile Header Card --- */}
-          <div className="bg-white dark:bg-neutral-900 rounded-2xl md:rounded-3xl shadow-xl overflow-hidden relative">
-            {/* Background Banner */}
-            <div className="h-24 md:h-32 bg-gradient-to-r from-blue-500 via-blue-500 to-blue-500"></div>
+          <div className="glass-panel rounded-[2rem] md:rounded-[3rem] p-4 md:p-8 relative mt-16 md:mt-24 shadow-2xl hover-3d group">
+            <div className="absolute inset-0 rounded-[2rem] md:rounded-[3rem] bg-gradient-to-br from-blue-400/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
 
-            <div className="px-4 md:px-8 pb-6 md:pb-8">
-              <div className="relative flex flex-col items-center md:items-end md:flex-row -mt-10 md:-mt-12 mb-4 md:mb-6 gap-4 md:gap-6">
-                {/* Avatar */}
-                <div className="relative">
-                  <div className="w-28 h-28 md:w-40 md:h-40 rounded-full border-4 border-white dark:border-neutral-900 shadow-lg overflow-hidden bg-white dark:bg-neutral-800">
-                    <img
-                      src={form.profilepic || "https://via.placeholder.com/150"}
-                      alt="Profile"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  {/* Verification Badge (Optional) */}
-                  {form.verified && (
-                    <div className="absolute bottom-1 right-1 md:bottom-2 md:right-2 bg-blue-500 text-white p-1 rounded-full border-2 border-white">
-                      <svg className="w-3 h-3 md:w-4 md:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
-                  )}
+            <div className="flex flex-col md:flex-row items-center md:items-start gap-6 relative z-10">
+              {/* Floating 3D Avatar */}
+              <div className="relative -mt-20 md:-mt-24 transition-transform duration-500 group-hover:-translate-y-4">
+                <div className="w-32 h-32 md:w-48 md:h-48 rounded-[2rem] md:rounded-[3rem] border border-white/40 dark:border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.3)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.6)] overflow-hidden bg-white/20 dark:bg-black/40 backdrop-blur-md transform rotate-3 hover:rotate-0 transition-transform duration-500">
+                  <img
+                    src={form.profilepic || "https://via.placeholder.com/150"}
+                    alt="Profile"
+                    className="w-full h-full object-cover"
+                  />
                 </div>
-
-                {/* User Info & Actions */}
-                <div className="flex-1 w-full text-center md:text-left">
-                  <div className="flex flex-col md:flex-row justify-between items-center md:items-center gap-3 md:gap-4">
-                    <div>
-                      <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">{form.name || "User Name"}</h1>
-                      <p className="text-gray-500 dark:text-neutral-400 font-medium">@{form.username || "username"}</p>
-                      {form.institute_name && (
-                        <p className="text-xs md:text-sm text-blue-600 dark:text-blue-400 font-medium mt-1">{form.institute_name} {form.university ? `• ${form.university}` : ''}</p>
-                      )}
-                    </div>
-
-                    <div className="flex gap-2 md:gap-3 w-full md:w-auto">
-                        <button onClick={() => { setEditForm({ ...form }); setIsEditModalOpen(true); }} className="w-full px-4 md:px-6 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm md:text-base font-semibold rounded-xl hover:shadow-lg transition-all shadow-md">
-                          Edit Profile
-                        </button>
-                    </div>
+                {/* Verification Badge */}
+                {form.verified && (
+                  <div className="absolute -bottom-2 -right-2 bg-gradient-to-r from-cyan-400 to-blue-500 text-white p-2 rounded-xl shadow-[0_0_15px_rgba(6,182,212,0.6)] border border-white/50 transform rotate-12">
+                    <svg className="w-5 h-5 md:w-6 md:h-6 drop-shadow-md" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
                   </div>
-
-                  {/* Bio */}
-                  <div className="mt-3 md:mt-4 max-w-2xl text-sm md:text-base text-gray-600 dark:text-neutral-400 leading-relaxed">
-                    {form.bio || "No bio yet."}
-                  </div>
-                </div>
+                )}
               </div>
 
-              {/* Stats Bar */}
-              <div className="grid grid-cols-3 gap-2 md:gap-4 border-t border-gray-100 dark:border-neutral-800 pt-4 md:pt-6">
-                <div className="text-center p-2 md:p-4 rounded-xl md:rounded-2xl bg-gray-50 dark:bg-neutral-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors cursor-pointer">
-                  <span className="block text-xl md:text-2xl font-bold text-blue-600 dark:text-blue-400">{written_post.length}</span>
-                  <span className="text-gray-400 dark:text-neutral-500 text-[10px] md:text-sm font-medium uppercase tracking-wide">Posts</span>
+              {/* User Info & Actions */}
+              <div className="flex-1 w-full text-center md:text-left pt-2 md:pt-4">
+                <div className="flex flex-col md:flex-row justify-between items-center md:items-start gap-4">
+                  <div>
+                    <h1 className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-400 drop-shadow-sm">{form.name || "User Name"}</h1>
+                    <p className="text-slate-600 dark:text-slate-300 font-bold tracking-wide mt-1">@{form.username || "username"}</p>
+                    {form.institute_name && (
+                      <p className="text-sm md:text-base text-cyan-600 dark:text-cyan-400 font-bold mt-2 drop-shadow-sm">{form.institute_name} {form.university ? `• ${form.university}` : ''}</p>
+                    )}
+                  </div>
+
+                  <div className="flex gap-2 w-full md:w-auto">
+                      <button onClick={() => { setEditForm({ ...form }); setIsEditModalOpen(true); }} className="w-full px-6 py-2 glass-card text-blue-600 dark:text-blue-300 font-bold rounded-2xl hover-3d hover:bg-white/40 dark:hover:bg-white/10 shadow-lg">
+                        Edit Profile
+                      </button>
+                  </div>
                 </div>
-                <div
-                  onClick={() => setseefollower(true)}
-                  className={`text-center p-2 md:p-4 rounded-xl md:rounded-2xl transition-colors cursor-pointer ${seefollower ? 'bg-blue-50 dark:bg-blue-900/40 ring-2 ring-blue-100 dark:ring-blue-900' : 'bg-gray-50 dark:bg-neutral-800 hover:bg-gray-100 dark:hover:bg-neutral-700'}`}
-                >
-                  <span className="block text-xl md:text-2xl font-bold text-blue-600 dark:text-blue-400">{followers.length}</span>
-                  <span className="text-gray-400 dark:text-neutral-500 text-[10px] md:text-sm font-medium uppercase tracking-wide">Followers</span>
+
+                {/* Bio */}
+                <div className="mt-4 md:mt-6 max-w-2xl text-sm md:text-base text-slate-700 dark:text-slate-300 font-medium leading-relaxed bg-white/20 dark:bg-black/20 p-4 rounded-2xl border border-white/30 dark:border-white/5 shadow-inner">
+                  {form.bio || "No bio yet."}
                 </div>
-                <div
-                  onClick={() => setseefollower(false)}
-                  className={`text-center p-2 md:p-4 rounded-xl md:rounded-2xl transition-colors cursor-pointer ${!seefollower ? 'bg-blue-50 dark:bg-blue-900/40 ring-2 ring-blue-100 dark:ring-blue-900' : 'bg-gray-50 dark:bg-neutral-800 hover:bg-gray-100 dark:hover:bg-neutral-700'}`}
-                >
-                  <span className="block text-xl md:text-2xl font-bold text-blue-600 dark:text-blue-400">{following.length}</span>
-                  <span className="text-gray-400 dark:text-neutral-500 text-[10px] md:text-sm font-medium uppercase tracking-wide">Following</span>
-                </div>
+              </div>
+            </div>
+
+            {/* Floating Stats Bar */}
+            <div className="grid grid-cols-3 gap-3 md:gap-6 mt-8 relative z-10">
+              <div className="text-center p-3 md:p-5 glass-card rounded-[1.5rem] hover-3d group/stat">
+                <span className="block text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-cyan-400 drop-shadow-md group-hover/stat:scale-110 transition-transform">{written_post.length}</span>
+                <span className="text-slate-500 dark:text-slate-400 text-xs md:text-sm font-bold uppercase tracking-widest mt-1 block">Posts</span>
+              </div>
+              <div
+                onClick={() => setseefollower(true)}
+                className={`text-center p-3 md:p-5 glass-card rounded-[1.5rem] hover-3d cursor-pointer group/stat transition-all ${seefollower ? 'ring-2 ring-cyan-400 bg-white/40 dark:bg-white/10 shadow-[0_0_20px_rgba(6,182,212,0.3)]' : ''}`}
+              >
+                <span className="block text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-cyan-400 drop-shadow-md group-hover/stat:scale-110 transition-transform">{followers.length}</span>
+                <span className="text-slate-500 dark:text-slate-400 text-xs md:text-sm font-bold uppercase tracking-widest mt-1 block">Followers</span>
+              </div>
+              <div
+                onClick={() => setseefollower(false)}
+                className={`text-center p-3 md:p-5 glass-card rounded-[1.5rem] hover-3d cursor-pointer group/stat transition-all ${!seefollower ? 'ring-2 ring-cyan-400 bg-white/40 dark:bg-white/10 shadow-[0_0_20px_rgba(6,182,212,0.3)]' : ''}`}
+              >
+                <span className="block text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-cyan-400 drop-shadow-md group-hover/stat:scale-110 transition-transform">{following.length}</span>
+                <span className="text-slate-500 dark:text-slate-400 text-xs md:text-sm font-bold uppercase tracking-widest mt-1 block">Following</span>
               </div>
             </div>
           </div>
 
           {/* --- Post Creation Section --- */}
-          <div className="flex justify-center md:justify-end gap-2 md:gap-3 flex-wrap">
+          <div className="flex justify-center md:justify-end gap-3 md:gap-4 flex-wrap mt-8">
             <button
               onClick={() => { setShortFormOpen(!shortFormOpen); setMomentFormOpen(false); setpost(false); }}
-              className="flex items-center gap-2 px-4 md:px-6 py-2 md:py-3 bg-gradient-to-r from-sky-500 to-sky-500 text-white text-sm md:text-base font-bold rounded-xl md:rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all"
+              className="flex items-center gap-2 px-5 md:px-8 py-3 md:py-4 glass-card text-sky-600 dark:text-sky-400 font-black tracking-widest uppercase rounded-2xl hover-3d hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-all border-2 border-transparent hover:border-sky-400/50"
             >
-              <Video size={16} />
+              <Video size={20} className="drop-shadow-md" />
               <span>Short</span>
             </button>
 
             <button
               onClick={() => { setMomentFormOpen(!momentFormOpen); setShortFormOpen(false); setpost(false); }}
-              className="flex items-center gap-2 px-4 md:px-6 py-2 md:py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white text-sm md:text-base font-bold rounded-xl md:rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all"
+              className="flex items-center gap-2 px-5 md:px-8 py-3 md:py-4 glass-card text-blue-600 dark:text-blue-400 font-black tracking-widest uppercase rounded-2xl hover-3d hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all border-2 border-transparent hover:border-blue-400/50"
             >
-              <span>⏱️ Moment</span>
+              <span className="text-xl drop-shadow-md">⏱️</span>
+              <span>Moment</span>
             </button>
 
             <button
               onClick={() => { setpost(!post); setMomentFormOpen(false); setShortFormOpen(false); }}
-              className="flex items-center gap-2 px-4 md:px-6 py-2 md:py-3 bg-gradient-to-r from-blue-600 to-blue-600 text-white text-sm md:text-base font-bold rounded-xl md:rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all"
+              className="flex items-center gap-2 px-5 md:px-8 py-3 md:py-4 bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-black tracking-widest uppercase rounded-2xl hover-3d shadow-[0_10px_30px_rgba(6,182,212,0.4)] transition-all"
             >
-              <span>✨ Post</span>
+              <span className="text-xl drop-shadow-md">✨</span>
+              <span>Post</span>
             </button>
           </div>
 
@@ -690,34 +810,51 @@ const Page = () => {
           )}
 
           {/* --- Main Content Grid --- */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-12">
 
             {/* Left Column: Your Posts */}
-            <div className="bg-white dark:bg-neutral-900 rounded-3xl shadow-lg p-6 border border-gray-100 dark:border-neutral-800">
-              <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2">
+            <div className="glass-panel rounded-[2rem] p-6">
+              <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-400 mb-6 flex items-center gap-2 drop-shadow-sm">
                 📝 Your Timeline
               </h2>
 
               {written_post.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-10 text-gray-400">
+                <div className="flex flex-col items-center justify-center py-10 text-slate-500 font-bold glass-card rounded-2xl">
                   <p>No posts yet.</p>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-6">
                   {written_post.map((p, i) => (
                     <motion.div
-                      initial={{ opacity: 0 }}
-                      whileInView={{ opacity: 1 }}
-                      viewport={{ once: true }}
+                      initial={{ opacity: 0, y: 30 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true, margin: "-50px" }}
+                      transition={{ duration: 0.5, ease: "easeOut" }}
                       key={i}
-                      className="bg-gray-50 dark:bg-neutral-800 p-5 rounded-2xl hover:shadow-md transition-shadow border border-gray-100 dark:border-neutral-700"
+                      className="glass-card p-5 rounded-[1.5rem] hover-3d relative"
                     >
                       <div className="flex items-center gap-3 mb-3">
                         <img src={p.profilepic} className="w-10 h-10 rounded-full object-cover" alt="avatar" />
-                        <div>
+                        <div className="flex-1">
                           <h4 className="font-bold text-gray-900 dark:text-white">{p.user_name}</h4>
                           <p className="text-xs text-gray-500 dark:text-neutral-400">{p.institute_name}</p>
                         </div>
+                        <button
+                          onClick={async () => {
+                            if (!confirm("Are you sure you want to delete this post?")) return;
+                            const res = await deletePost(p._id, form._id);
+                            if (res.success) {
+                              setwritten_post(prev => prev.filter(post => post._id !== p._id));
+                              alert("Post deleted successfully!");
+                            } else {
+                              alert(res.message || "Failed to delete post.");
+                            }
+                          }}
+                          className="p-2 rounded-full hover:bg-red-100 dark:hover:bg-red-900/30 text-gray-400 hover:text-red-500 transition-colors"
+                          title="Delete post"
+                        >
+                          <Trash2 size={18} />
+                        </button>
                       </div>
                       <p className="text-gray-800 dark:text-neutral-200 leading-relaxed mb-3">{p.content}</p>
 
@@ -866,21 +1003,21 @@ const Page = () => {
             </div>
 
             {/* Right Column: Toggles (Followers/Following) */}
-            <div className="bg-white dark:bg-neutral-900 rounded-3xl shadow-lg p-6 border border-gray-100 dark:border-neutral-800 h-fit sticky top-6">
+            <div className="glass-panel rounded-[2rem] p-6 h-fit sticky top-6">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold text-gray-800 dark:text-white">
+                <h2 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-400 drop-shadow-sm">
                   {seefollower ? '🌸 Followers' : '💫 Following'}
                 </h2>
-                <div className="flex bg-gray-100 dark:bg-neutral-800 p-1 rounded-xl">
+                <div className="flex bg-white/20 dark:bg-black/20 p-1 rounded-xl shadow-inner border border-white/10">
                   <button
                     onClick={() => setseefollower(true)}
-                    className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${seefollower ? 'bg-white dark:bg-neutral-700 shadow text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-neutral-400 hover:text-gray-700 dark:hover:text-white'}`}
+                    className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${seefollower ? 'bg-white/60 dark:bg-white/20 shadow-md text-blue-600 dark:text-cyan-400 border border-white/50 dark:border-white/10' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
                   >
                     Followers
                   </button>
                   <button
                     onClick={() => setseefollower(false)}
-                    className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${!seefollower ? 'bg-white dark:bg-neutral-700 shadow text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-neutral-400 hover:text-gray-700 dark:hover:text-white'}`}
+                    className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${!seefollower ? 'bg-white/60 dark:bg-white/20 shadow-md text-blue-600 dark:text-cyan-400 border border-white/50 dark:border-white/10' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
                   >
                     Following
                   </button>
@@ -889,7 +1026,7 @@ const Page = () => {
 
               <div className="space-y-4 max-h-[600px] overflow-y-auto custom-scrollbar pr-2">
                 {(seefollower ? followers : following).length === 0 ? (
-                  <div className="text-center py-10 text-gray-400">
+                  <div className="text-center py-10 text-slate-500 font-bold glass-card rounded-2xl">
                     {seefollower ? "No followers yet." : "Not following anyone yet."}
                   </div>
                 ) : (
@@ -897,22 +1034,20 @@ const Page = () => {
                     {(seefollower ? followers : following).map((user, i) => (
                       <motion.div
                         key={i}
-                        whileHover={{ scale: 1.02 }}
-                        className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-neutral-800 rounded-xl"
+                        className="flex items-center gap-3 p-3 glass-card rounded-2xl hover-3d"
                       >
                         <img
                           src={user.sender_profilepic}
                           alt="avatar"
-                          className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm"
+                          className="w-12 h-12 rounded-full object-cover border border-white/50 shadow-sm"
                         />
                         <div className="min-w-0">
                           <Link
                             href={{ pathname: "/ViewFriends", query: { friend_email: user.sender_email, user_email: session.user.email } }}
-                            className="block font-semibold text-gray-900 dark:text-white truncate hover:text-blue-600 dark:hover:text-blue-400"
+                            className="block font-bold text-slate-900 dark:text-white truncate hover:text-cyan-500 transition-colors"
                           >
                             {user.sender_username || user.sender_email.split('@')[0]}
                           </Link>
-                          {/* <p className="text-xs text-gray-500 truncate">@{user.sender_email}</p> */}
                         </div>
                       </motion.div>
                     ))}
@@ -1088,6 +1223,15 @@ const Page = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* NSFW Analysis Overlay */}
+      {isAnalyzing && (
+        <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm text-white">
+          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+          <h3 className="text-xl font-bold font-serif mb-2">Analyzing Media...</h3>
+          <p className="text-sm text-gray-300">Checking for foul or NSFW content</p>
+        </div>
+      )}
     </div>
   )
 }

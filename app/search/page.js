@@ -156,35 +156,35 @@ const SearchPage = () => {
     };
 
     return (
-        <div className="flex bg-gray-50 dark:bg-black h-screen w-full overflow-hidden">
+        <div className="flex bg-transparent h-screen w-full overflow-hidden">
             <Sidebar className="flex-1" />
 
-            <main className="flex-1 p-2 lg:p-8 overflow-y-auto w-full pb-20 md:pb-8">
-                <div className="max-w-4xl mx-auto space-y-4 lg:space-y-8">
+            <main className="flex-1 p-2 lg:p-8 overflow-y-auto w-full pb-20 md:pb-8 relative z-10">
+                <div className="max-w-4xl mx-auto space-y-4 lg:space-y-8 mt-12">
 
                     {/* Header & Search Input */}
-                    <div className="bg-white dark:bg-neutral-900 rounded-2xl lg:rounded-3xl shadow-xl p-4 lg:p-8 border border-white/20 dark:border-neutral-800 backdrop-blur-xl">
-                        <h1 className="text-2xl lg:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-500 mb-1 lg:mb-2 text-center lg:text-left">
+                    <div className="glass-panel rounded-[2rem] p-4 lg:p-8 hover-3d transition-all">
+                        <h1 className="text-3xl lg:text-4xl font-black bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-cyan-500 mb-2 text-center lg:text-left drop-shadow-sm">
                             Find Friends 🔍
                         </h1>
-                        <p className="hidden md:block text-gray-500 dark:text-neutral-400 mb-8">Search for people by name or @username to connect.</p>
+                        <p className="hidden md:block text-slate-500 dark:text-slate-400 font-bold mb-8">Search for people by name or @username to connect.</p>
 
                         <div className="relative group mt-4 lg:mt-0">
                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                <SearchIcon className="h-5 w-5 lg:h-6 lg:w-6 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+                                <SearchIcon className="h-5 w-5 lg:h-6 lg:w-6 text-slate-400 group-focus-within:text-cyan-500 transition-colors drop-shadow-md" />
                             </div>
                             <input
                                 type="text"
-                                className="block w-full pl-10 lg:pl-12 pr-4 py-3 lg:py-4 bg-gray-50 dark:bg-neutral-800 border-2 border-gray-100 dark:border-neutral-700 rounded-xl lg:rounded-2xl 
-                                           text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 
-                                           focus:ring-4 focus:ring-blue-500/10 transition-all text-base lg:text-lg font-medium"
+                                className="block w-full pl-10 lg:pl-12 pr-4 py-3 lg:py-4 bg-white/40 dark:bg-black/20 border border-white/50 dark:border-white/10 rounded-xl lg:rounded-2xl 
+                                           text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-cyan-500 
+                                           focus:ring-2 focus:ring-cyan-500/20 transition-all text-base lg:text-lg font-bold shadow-inner"
                                 placeholder="Search friends..."
                                 value={query}
                                 onChange={handleSearch}
                             />
                             {isLoading && (
                                 <div className="absolute inset-y-0 right-4 flex items-center">
-                                    <div className="animate-spin rounded-full h-4 w-4 lg:h-5 lg:w-5 border-b-2 border-blue-600"></div>
+                                    <div className="animate-spin rounded-full h-4 w-4 lg:h-5 lg:w-5 border-b-2 border-cyan-500"></div>
                                 </div>
                             )}
                         </div>
@@ -192,28 +192,28 @@ const SearchPage = () => {
 
                     {/* Results Grid */}
                     {results.length > 0 ? (
-                        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-6">
+                        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
                             {results.map((user) => (
                                 <motion.div
                                     key={user._id}
-                                    initial={{ opacity: 0, y: 10 }}
+                                    initial={{ opacity: 0, y: 30 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    className="bg-white dark:bg-neutral-900 rounded-2xl shadow-md p-3 lg:p-6 flex flex-col items-center border border-gray-100 dark:border-neutral-800 hover:shadow-xl transition-shadow"
+                                    className="glass-card rounded-[1.5rem] p-4 lg:p-6 flex flex-col items-center hover-3d transition-all"
                                 >
                                     <Link href={{ pathname: '/ViewFriends', query: { friend_email: user.email, user_email: session.user.email } }} className="w-full flex flex-col items-center cursor-pointer">
-                                        <div className="w-16 h-16 lg:w-24 lg:h-24 rounded-full p-1 bg-gradient-to-tr from-blue-500 to-blue-500 mb-2 lg:mb-4 transition-transform hover:scale-105">
+                                        <div className="w-16 h-16 lg:w-24 lg:h-24 rounded-full p-1 bg-gradient-to-tr from-blue-500 to-cyan-400 mb-4 shadow-[0_0_15px_rgba(6,182,212,0.5)] transition-transform hover:scale-105">
                                             <img
                                                 src={user.profilepic || "https://via.placeholder.com/150"}
                                                 alt={user.name}
-                                                className="w-full h-full rounded-full object-cover border-2 border-white"
+                                                className="w-full h-full rounded-full object-cover border-2 border-white/80"
                                             />
                                         </div>
 
-                                        <h3 className="text-base lg:text-xl font-bold text-gray-900 dark:text-white text-center truncate w-full hover:text-blue-600 transition-colors">{user.name}</h3>
-                                        <p className="text-blue-600 font-medium text-xs lg:text-sm mb-2 lg:mb-4">@{user.username}</p>
+                                        <h3 className="text-lg lg:text-xl font-black text-slate-900 dark:text-white text-center truncate w-full hover:text-cyan-500 transition-colors drop-shadow-sm">{user.name}</h3>
+                                        <p className="text-blue-600 dark:text-cyan-400 font-bold text-xs lg:text-sm mb-4">@{user.username}</p>
 
                                         {user.institute_name && (
-                                            <p className="hidden md:block text-gray-500 text-xs mb-4 text-center line-clamp-1">{user.institute_name}</p>
+                                            <p className="hidden md:block text-slate-500 font-medium text-xs mb-4 text-center line-clamp-1">{user.institute_name}</p>
                                         )}
                                     </Link>
 
@@ -224,13 +224,13 @@ const SearchPage = () => {
                             ))}
                         </div>
                     ) : query.length > 0 ? (
-                        <div className="text-center py-12">
-                            <p className="text-gray-500 text-lg">No users found matching "{query}" 😕</p>
+                        <div className="text-center py-12 glass-panel rounded-[2rem]">
+                            <p className="text-slate-500 font-bold text-lg">No users found matching "{query}" 😕</p>
                         </div>
                     ) : (
-                        <div className="flex flex-col items-center justify-center py-12 text-gray-400 opacity-50">
-                            <SearchIcon size={64} className="mb-4" />
-                            <p className="text-lg">Start typing to find new friends!</p>
+                        <div className="flex flex-col items-center justify-center py-12 text-slate-400 opacity-60 glass-panel rounded-[2rem]">
+                            <SearchIcon size={64} className="mb-4 drop-shadow-md" />
+                            <p className="text-lg font-bold">Start typing to find new friends!</p>
                         </div>
                     )}
                 </div>

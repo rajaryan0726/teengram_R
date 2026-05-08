@@ -172,22 +172,22 @@ const Page = () => {
   }
 
   return (
-    <div className="flex bg-gray-50 dark:bg-black h-screen w-full overflow-hidden transition-colors">
+    <div className="flex bg-transparent h-screen w-full overflow-hidden transition-colors">
       <Sidebar className="flex-1" />
 
-      <main className="flex-1 p-2 lg:p-8 overflow-y-auto custom-scrollbar pb-20 md:pb-8">
-        <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
+      <main className="flex-1 p-2 lg:p-8 overflow-y-auto custom-scrollbar pb-20 md:pb-8 relative z-10">
+        <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
             
           {/* Moments Section (Top on mobile, Right side on desktop) */}
           <div className="lg:col-start-3 lg:row-start-1">
-             <div className="bg-white dark:bg-neutral-900 rounded-2xl lg:rounded-3xl shadow-sm border border-gray-100 dark:border-neutral-800 py-3 px-2 lg:p-6 lg:sticky lg:top-4">
-                <h3 className="hidden lg:block font-bold text-gray-800 dark:text-gray-100 mb-6 font-serif text-lg">Moments</h3>
+             <div className="glass-panel rounded-3xl py-4 px-3 lg:p-6 lg:sticky lg:top-4">
+                <h3 className="hidden lg:block font-black text-gray-800 dark:text-gray-100 mb-6 text-xl tracking-wide">Moments</h3>
                 <div className="flex flex-row lg:flex-col gap-3 lg:gap-4 overflow-x-auto lg:overflow-x-hidden lg:overflow-y-auto lg:max-h-[75vh] custom-scrollbar pb-2 px-1 lg:px-2">
-                   <Link href="/User" className="flex flex-col lg:flex-row items-center gap-2 lg:gap-4 min-w-[70px] cursor-pointer group shrink-0 w-full">
-                      <div className="relative w-16 h-16 rounded-full border-2 border-dashed border-gray-300 dark:border-gray-600 flex justify-center items-center bg-gray-50 dark:bg-neutral-800 group-hover:bg-gray-100 dark:group-hover:bg-neutral-700 transition shrink-0">
-                         <span className="text-2xl text-gray-400 dark:text-gray-500">+</span>
+                   <Link href="/User" className="flex flex-col lg:flex-row items-center gap-3 lg:gap-4 min-w-[70px] cursor-pointer group shrink-0 w-full hover-3d">
+                      <div className="relative w-16 h-16 rounded-full border border-dashed border-cyan-500/50 flex justify-center items-center bg-white/20 dark:bg-black/20 group-hover:bg-cyan-500/20 transition shrink-0 shadow-[inset_0_0_10px_rgba(6,182,212,0.2)]">
+                         <span className="text-3xl text-cyan-500 font-light">+</span>
                       </div>
-                      <span className="text-xs lg:text-sm font-semibold text-center lg:text-left text-gray-700 dark:text-gray-300">Add Moment</span>
+                      <span className="text-xs lg:text-sm font-bold text-center lg:text-left text-gray-700 dark:text-gray-300">Add Moment</span>
                    </Link>
 
                 {(() => {
@@ -209,9 +209,9 @@ const Page = () => {
                         const allViewed = userMoments.every(m => hasViewedMoment(m));
 
                         return (
-                            <div key={i} onClick={() => openMomentGroup(userMoments)} className="flex flex-col lg:flex-row items-center gap-2 lg:gap-4 min-w-[70px] cursor-pointer group shrink-0 w-full transition">
+                            <div key={i} onClick={() => openMomentGroup(userMoments)} className="flex flex-col lg:flex-row items-center gap-3 lg:gap-4 min-w-[70px] cursor-pointer group shrink-0 w-full hover-3d">
                                 <SegmentedCircle count={userMoments.length} hasViewedAll={allViewed} profilepic={firstMoment.profilepic} />
-                                <span className="text-xs lg:text-sm font-semibold tracking-wide text-center lg:text-left text-gray-700 dark:text-gray-200 truncate w-full px-1">
+                                <span className="text-xs lg:text-sm font-bold tracking-wide text-center lg:text-left text-gray-700 dark:text-gray-200 truncate w-full px-1">
                                     {firstMoment.user_id === form._id ? 'You' : firstMoment.user_name || firstMoment.user_id}
                                 </span>
                             </div>
@@ -223,17 +223,18 @@ const Page = () => {
           </div>
 
           {/* Feed Posts */}
-          <div className="lg:col-span-2 lg:col-start-1 lg:row-start-1 space-y-6 pb-20">
+          <div className="lg:col-span-2 lg:col-start-1 lg:row-start-1 space-y-8 pb-20">
             {feedPosts.length === 0 ? (
-                <div className="text-center py-10 text-gray-400">No posts on your feed yet. Go follow some friends!</div>
+                <div className="text-center py-10 text-gray-500 font-bold glass-panel rounded-3xl">No posts on your feed yet. Go follow some friends!</div>
             ) : (
                 feedPosts.map((p, i) => (
                     <motion.div
-                      initial={{ opacity: 0, y: 10 }}
+                      initial={{ opacity: 0, y: 30 }}
                       whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true }}
+                      viewport={{ once: true, margin: "-100px" }}
+                      transition={{ duration: 0.5, ease: "easeOut" }}
                       key={i}
-                      className="bg-white dark:bg-neutral-900 p-4 lg:p-5 rounded-2xl lg:rounded-3xl shadow-lg border border-gray-100 dark:border-neutral-800 relative"
+                      className="glass-card p-5 lg:p-6 rounded-[2rem] relative hover-3d"
                     >
                       <div className="flex items-center justify-between mb-3 lg:mb-4">
                         <Link href={p.user_id === form._id ? "/User" : { pathname: "/ViewFriends", query: { friend_email: p.user_email || p.user_id } }} className="flex items-center gap-2 lg:gap-3 group relative">

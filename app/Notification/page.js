@@ -71,26 +71,26 @@ const Page = () => {
   if (loading) return <div className="text-center p-10 text-white">Loading...</div>;
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-screen overflow-hidden bg-transparent">
       <Sidebar className="flex-1" />
-      <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-black pb-20 md:pb-8">
-        <div className="max-w-2xl mx-auto px-4 py-6 md:py-8 space-y-8">
+      <main className="flex-1 overflow-y-auto pb-20 md:pb-8 relative z-10">
+        <div className="max-w-2xl mx-auto px-4 py-6 md:py-8 space-y-8 mt-12">
 
         {/* FRIEND REQUESTS SECTION */}
         <section className="mb-6">
-          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-3 border-b pb-2">
+          <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-400 mb-6 drop-shadow-sm border-b border-white/20 pb-2">
             Friend Requests
           </h2>
 
-          <div className="space-y-3">
+          <div className="space-y-4">
             {request.length === 0 ? (
-              <div className="p-8 text-center bg-white dark:bg-neutral-900 rounded-2xl border border-gray-100 dark:border-neutral-800 shadow-sm">
-                <p className="text-gray-400 font-medium">No new requests.</p>
+              <div className="p-8 text-center glass-panel rounded-3xl">
+                <p className="text-slate-500 font-bold">No new requests.</p>
               </div>
             ) : request.map((p, i) => (
-              <div key={i} className="flex p-4 bg-white dark:bg-neutral-900 items-center justify-between gap-4 rounded-2xl border border-gray-100 dark:border-neutral-800 shadow-sm hover:shadow-md transition-shadow">
+              <div key={i} className="flex p-4 glass-card items-center justify-between gap-4 rounded-2xl hover-3d transition-all">
                 <div className="flex items-center gap-4 min-w-0">
-                  <div className="relative w-12 h-12 lg:w-14 lg:h-14 rounded-full overflow-hidden border-2 border-white dark:border-neutral-800 shadow-sm flex-shrink-0">
+                  <div className="relative w-12 h-12 lg:w-14 lg:h-14 rounded-full overflow-hidden border border-white/50 shadow-sm flex-shrink-0">
                     <img
                       className="w-full h-full object-cover"
                       src={p.sender_profilepic || "/default-avatar.png"}
@@ -102,21 +102,21 @@ const Page = () => {
                       pathname: "/ViewFriends",
                       query: { friend_email: p.sender_email }
                     }}>
-                      <span className="font-bold text-gray-900 dark:text-white truncate block">
+                      <span className="font-bold text-slate-900 dark:text-white truncate block">
                         {p.sender_username || p.sender_email.split('@')[0]}
                       </span>
                     </Link>
-                    <p className="text-xs lg:text-sm text-gray-500 font-medium">wants to connect</p>
+                    <p className="text-xs lg:text-sm text-cyan-600 font-bold">wants to connect</p>
                   </div>
                 </div>
 
                 <div className="flex-shrink-0">
                   {p.request_accepted ? (
-                    <span className="px-3 py-1 bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-xs font-bold rounded-full">Friends!</span>
+                    <span className="px-3 py-1 bg-green-500/20 text-green-600 dark:text-green-400 text-xs font-bold rounded-full border border-green-500/30">Friends!</span>
                   ) : (
                     <button
                       onClick={() => acceptrequest(p._id)}
-                      className="p-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all shadow-md active:scale-95"
+                      className="p-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl hover:shadow-lg transition-all shadow-md active:scale-95 hover-3d"
                       title="Accept Request"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -131,17 +131,17 @@ const Page = () => {
 
         {/* NOTIFICATIONS SECTION (Merged Likes & Comments) */}
         <section className="mb-6">
-          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-3 border-b pb-2">
+          <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-400 mb-6 drop-shadow-sm border-b border-white/20 pb-2">
             Notifications
           </h2>
 
-          <div className="space-y-3">
+          <div className="space-y-4">
             {notifications.length === 0 ? (
-              <div className="p-8 text-center bg-white dark:bg-neutral-900 rounded-2xl border border-gray-100 dark:border-neutral-800 shadow-sm">
-                <p className="text-gray-400 font-medium">No new notifications.</p>
+              <div className="p-8 text-center glass-panel rounded-3xl">
+                <p className="text-slate-500 font-bold">No new notifications.</p>
               </div>
             ) : notifications.map((n, i) => (
-              <div key={i} className="flex p-4 bg-white dark:bg-neutral-900 items-start gap-4 rounded-2xl border border-gray-100 dark:border-neutral-800 shadow-sm hover:shadow-md transition-shadow">
+              <div key={i} className="flex p-4 glass-card items-start gap-4 rounded-2xl hover-3d transition-all">
                 <div className="relative flex-shrink-0">
                   <img
                     src={n.sender_profilepic || "/default-avatar.png"}
